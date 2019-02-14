@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VerificationStartedNotifier.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.listeners</a> &gt; <span class="el_source">VerificationStartedNotifier.java</span></div><h1>VerificationStartedNotifier.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.listeners;
+
+import org.mockito.MockingDetails;
+import org.mockito.Mockito;
+import org.mockito.internal.exceptions.Reporter;
+import org.mockito.internal.matchers.text.ValuePrinter;
+import org.mockito.listeners.VerificationStartedEvent;
+import org.mockito.listeners.VerificationStartedListener;
+import org.mockito.mock.MockCreationSettings;
+
+import java.util.List;
+import java.util.Set;
+
+<span class="nc" id="L18">public class VerificationStartedNotifier {</span>
+
+    public static Object notifyVerificationStarted(List&lt;VerificationStartedListener&gt; listeners, MockingDetails originalMockingDetails) {
+<span class="fc bfc" id="L21" title="All 2 branches covered.">        if (listeners.isEmpty()) {</span>
+<span class="fc" id="L22">            return originalMockingDetails.getMock();</span>
+        }
+<span class="fc" id="L24">        VerificationStartedEvent event = new Event(originalMockingDetails);</span>
+<span class="fc bfc" id="L25" title="All 2 branches covered.">        for (VerificationStartedListener listener : listeners) {</span>
+<span class="fc" id="L26">            listener.onVerificationStarted(event);</span>
+<span class="fc" id="L27">        }</span>
+<span class="fc" id="L28">        return event.getMock();</span>
+    }
+
+    static class Event implements VerificationStartedEvent {
+        private final MockingDetails originalMockingDetails;
+        private Object mock;
+
+<span class="fc" id="L35">        public Event(MockingDetails originalMockingDetails) {</span>
+<span class="fc" id="L36">            this.originalMockingDetails = originalMockingDetails;</span>
+<span class="fc" id="L37">            this.mock = originalMockingDetails.getMock();</span>
+<span class="fc" id="L38">        }</span>
+
+        public void setMock(Object mock) {
+<span class="fc bfc" id="L41" title="All 2 branches covered.">            if (mock == null) {</span>
+<span class="fc" id="L42">                throw Reporter.methodDoesNotAcceptParameter(&quot;VerificationStartedEvent.setMock&quot;, &quot;null parameter.&quot;);</span>
+            }
+<span class="fc" id="L44">            MockingDetails mockingDetails = Mockito.mockingDetails(mock);</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">            if (!mockingDetails.isMock()) {</span>
+<span class="fc" id="L46">                throw Reporter.methodDoesNotAcceptParameter(&quot;VerificationStartedEvent.setMock&quot;, &quot;parameter which is not a Mockito mock.\n&quot; +</span>
+<span class="fc" id="L47">                    &quot;  Received parameter: &quot; + ValuePrinter.print(mock) + &quot;.\n &quot;);</span>
+            }
+<span class="fc" id="L49">            MockCreationSettings originalMockSettings = this.originalMockingDetails.getMockCreationSettings();</span>
+<span class="fc" id="L50">            assertCompatibleTypes(mock, originalMockSettings);</span>
+<span class="fc" id="L51">            this.mock = mock;</span>
+<span class="fc" id="L52">        }</span>
+
+        public Object getMock() {
+<span class="fc" id="L55">            return mock;</span>
+        }
+    }
+
+    static void assertCompatibleTypes(Object mock, MockCreationSettings originalSettings) {
+<span class="fc" id="L60">        Class originalType = originalSettings.getTypeToMock();</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (!originalType.isInstance(mock)) {</span>
+<span class="fc" id="L62">            throw Reporter.methodDoesNotAcceptParameter(&quot;VerificationStartedEvent.setMock&quot;,</span>
+                &quot;parameter which is not the same type as the original mock.\n&quot; +
+<span class="fc" id="L64">                    &quot;  Required type: &quot; + originalType.getName() + &quot;\n&quot; +</span>
+<span class="fc" id="L65">                    &quot;  Received parameter: &quot; + ValuePrinter.print(mock) + &quot;.\n &quot;);</span>
+        }
+
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        for (Class iface : (Set&lt;Class&gt;) originalSettings.getExtraInterfaces()) {</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">            if (!iface.isInstance(mock)) {</span>
+<span class="fc" id="L70">                throw Reporter.methodDoesNotAcceptParameter(&quot;VerificationStartedEvent.setMock&quot;,</span>
+                    &quot;parameter which does not implement all extra interfaces of the original mock.\n&quot; +
+<span class="fc" id="L72">                        &quot;  Required type: &quot; + originalType.getName() + &quot;\n&quot; +</span>
+<span class="fc" id="L73">                        &quot;  Required extra interface: &quot; + iface.getName() + &quot;\n&quot; +</span>
+<span class="fc" id="L74">                        &quot;  Received parameter: &quot; + ValuePrinter.print(mock) + &quot;.\n &quot;);</span>
+
+            }
+<span class="fc" id="L77">        }</span>
+<span class="fc" id="L78">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

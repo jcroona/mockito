@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StubbedInvocationMatcher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.stubbing</a> &gt; <span class="el_source">StubbedInvocationMatcher.java</span></div><h1>StubbedInvocationMatcher.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2007 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.stubbing;
+
+import org.mockito.internal.invocation.InvocationMatcher;
+import org.mockito.invocation.DescribedInvocation;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.invocation.MatchableInvocation;
+import org.mockito.quality.Strictness;
+import org.mockito.stubbing.Answer;
+import org.mockito.stubbing.Stubbing;
+
+import java.io.Serializable;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+@SuppressWarnings(&quot;unchecked&quot;)
+public class StubbedInvocationMatcher extends InvocationMatcher implements Serializable, Stubbing {
+
+    private static final long serialVersionUID = 4919105134123672727L;
+<span class="fc" id="L23">    private final Queue&lt;Answer&gt; answers = new ConcurrentLinkedQueue&lt;Answer&gt;();</span>
+    private final Strictness strictness;
+    private DescribedInvocation usedAt;
+
+    public StubbedInvocationMatcher(Answer answer, MatchableInvocation invocation, Strictness strictness) {
+<span class="fc" id="L28">        super(invocation.getInvocation(), invocation.getMatchers());</span>
+<span class="fc" id="L29">        this.strictness = strictness;</span>
+<span class="fc" id="L30">        this.answers.add(answer);</span>
+<span class="fc" id="L31">    }</span>
+
+    public Object answer(InvocationOnMock invocation) throws Throwable {
+        //see ThreadsShareGenerouslyStubbedMockTest
+        Answer a;
+<span class="fc" id="L36">        synchronized(answers) {</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">            a = answers.size() == 1 ? answers.peek() : answers.poll();</span>
+<span class="fc" id="L38">        }</span>
+<span class="fc" id="L39">        return a.answer(invocation);</span>
+    }
+
+    public void addAnswer(Answer answer) {
+<span class="fc" id="L43">        answers.add(answer);</span>
+<span class="fc" id="L44">    }</span>
+
+    public void markStubUsed(DescribedInvocation usedAt) {
+<span class="fc" id="L47">        this.usedAt = usedAt;</span>
+<span class="fc" id="L48">    }</span>
+
+    public boolean wasUsed() {
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        return usedAt != null;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L56">        return super.toString() + &quot; stubbed with: &quot; + answers;</span>
+    }
+
+    @Override
+    public Strictness getStrictness() {
+<span class="fc" id="L61">        return strictness;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

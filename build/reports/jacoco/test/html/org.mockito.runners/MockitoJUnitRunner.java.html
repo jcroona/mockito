@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MockitoJUnitRunner.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.runners</a> &gt; <span class="el_source">MockitoJUnitRunner.java</span></div><h1>MockitoJUnitRunner.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2007 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.runners;
+
+import java.lang.reflect.InvocationTargetException;
+import org.junit.runner.Description;
+import org.junit.runner.manipulation.Filter;
+import org.junit.runner.manipulation.NoTestsRemainException;
+import org.junit.runner.notification.RunNotifier;
+
+
+/**
+ * Runner moved to a new place see {@link org.mockito.junit.MockitoJUnitRunner}
+ *
+ * @deprecated Moved to {@link org.mockito.junit.MockitoJUnitRunner}, this class will be removed with Mockito 3
+ */
+@Deprecated
+public class MockitoJUnitRunner extends org.mockito.junit.MockitoJUnitRunner {
+
+    /**
+     * Silent runner moved to a new place see {@link org.mockito.junit.MockitoJUnitRunner.Silent}
+     *
+     * @deprecated Moved to {@link org.mockito.junit.MockitoJUnitRunner.Silent}, this class will be removed with Mockito 3
+     */
+    @Deprecated
+    public static class Silent extends MockitoJUnitRunner {
+        public Silent(Class&lt;?&gt; klass) throws InvocationTargetException {
+<span class="nc" id="L30">            super(klass);</span>
+<span class="nc" id="L31">        }</span>
+    }
+
+    /**
+     * Silent runner moved to a new place see {@link org.mockito.junit.MockitoJUnitRunner.Strict}
+     *
+     * @deprecated Moved to {@link org.mockito.junit.MockitoJUnitRunner.Strict}, this class will be removed with Mockito 3
+     */
+    @Deprecated
+    public static class Strict extends MockitoJUnitRunner {
+        public Strict(Class&lt;?&gt; klass) throws InvocationTargetException {
+<span class="nc" id="L42">            super(klass);</span>
+<span class="nc" id="L43">        }</span>
+    }
+
+    public MockitoJUnitRunner(Class&lt;?&gt; klass) throws InvocationTargetException {
+<span class="nc" id="L47">        super(klass);</span>
+<span class="nc" id="L48">    }</span>
+
+    @Deprecated
+    @Override
+    public void run(final RunNotifier notifier) {
+<span class="nc" id="L53">        super.run(notifier);</span>
+<span class="nc" id="L54">    }</span>
+
+    @Deprecated
+    @Override
+    public Description getDescription() {
+<span class="nc" id="L59">        return super.getDescription();</span>
+    }
+
+    @Deprecated
+    public void filter(Filter filter) throws NoTestsRemainException {
+<span class="nc" id="L64">        super.filter(filter);</span>
+<span class="nc" id="L65">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

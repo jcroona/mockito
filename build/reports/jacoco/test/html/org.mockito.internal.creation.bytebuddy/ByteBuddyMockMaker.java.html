@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ByteBuddyMockMaker.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.creation.bytebuddy</a> &gt; <span class="el_source">ByteBuddyMockMaker.java</span></div><h1>ByteBuddyMockMaker.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.creation.bytebuddy;
+
+import org.mockito.Incubating;
+import org.mockito.invocation.MockHandler;
+import org.mockito.mock.MockCreationSettings;
+
+/**
+ * ByteBuddy MockMaker.
+ *
+ * This class will serve as the programmatic entry point to all mockito internal MockMakers.
+ * Currently the default and only mock maker is the subclassing engine, but with enough feedback we can later
+ * promote the inlining engine for features like final class/methods mocks.
+ *
+ * The programmatic API could look like {@code mock(Final.class, withSettings().finalClasses())}.
+ */
+<span class="fc" id="L20">public class ByteBuddyMockMaker implements ClassCreatingMockMaker {</span>
+<span class="fc" id="L21">    private ClassCreatingMockMaker defaultByteBuddyMockMaker = new SubclassByteBuddyMockMaker();</span>
+
+    @Override
+    public &lt;T&gt; T createMock(MockCreationSettings&lt;T&gt; settings, MockHandler handler) {
+<span class="fc" id="L25">        return defaultByteBuddyMockMaker.createMock(settings, handler);</span>
+    }
+
+    @Override
+    public &lt;T&gt; Class&lt;? extends T&gt; createMockType(MockCreationSettings&lt;T&gt; creationSettings) {
+<span class="fc" id="L30">        return defaultByteBuddyMockMaker.createMockType(creationSettings);</span>
+    }
+
+    @Override
+    public MockHandler getHandler(Object mock) {
+<span class="fc" id="L35">        return defaultByteBuddyMockMaker.getHandler(mock);</span>
+    }
+
+    @Override
+    public void resetMock(Object mock, MockHandler newHandler, MockCreationSettings settings) {
+<span class="fc" id="L40">        defaultByteBuddyMockMaker.resetMock(mock, newHandler, settings);</span>
+<span class="fc" id="L41">    }</span>
+
+    @Override
+    @Incubating
+    public TypeMockability isTypeMockable(Class&lt;?&gt; type) {
+<span class="fc" id="L46">        return defaultByteBuddyMockMaker.isTypeMockable(type);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WeakConcurrentMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.util.concurrent</a> &gt; <span class="el_source">WeakConcurrentMap.java</span></div><h1>WeakConcurrentMap.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.util.concurrent;
+
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
+
+/**
+ * &lt;p&gt;
+ * A thread-safe map with weak keys. Entries are based on a key's system hash code and keys are considered
+ * equal only by reference equality.
+ * &lt;/p&gt;
+ * This class does not implement the {@link java.util.Map} interface because this implementation is incompatible
+ * with the map contract. While iterating over a map's entries, any key that has not passed iteration is referenced non-weakly.
+ */
+public class WeakConcurrentMap&lt;K, V&gt; extends ReferenceQueue&lt;K&gt; implements Runnable, Iterable&lt;Map.Entry&lt;K, V&gt;&gt; {
+
+<span class="fc" id="L27">    private static final AtomicLong ID = new AtomicLong();</span>
+
+    public final ConcurrentMap&lt;WeakKey&lt;K&gt;, V&gt; target;
+
+    private final Thread thread;
+
+    /**
+     * @param cleanerThread {@code true} if a thread should be started that removes stale entries.
+     */
+<span class="fc" id="L36">    public WeakConcurrentMap(boolean cleanerThread) {</span>
+<span class="fc" id="L37">        target = new ConcurrentHashMap&lt;WeakKey&lt;K&gt;, V&gt;();</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        if (cleanerThread) {</span>
+<span class="nc" id="L39">            thread = new Thread(this);</span>
+<span class="nc" id="L40">            thread.setName(&quot;weak-ref-cleaner-&quot; + ID.getAndIncrement());</span>
+<span class="nc" id="L41">            thread.setPriority(Thread.MIN_PRIORITY);</span>
+<span class="nc" id="L42">            thread.setDaemon(true);</span>
+<span class="nc" id="L43">            thread.start();</span>
+        } else {
+<span class="fc" id="L45">            thread = null;</span>
+        }
+<span class="fc" id="L47">    }</span>
+
+    /**
+     * @param key The key of the entry.
+     * @return The value of the entry or the default value if it did not exist.
+     */
+    @SuppressWarnings(&quot;CollectionIncompatibleType&quot;)
+    public V get(K key) {
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">        if (key == null) throw new NullPointerException();</span>
+<span class="fc" id="L56">        V value = target.get(new LatentKey&lt;K&gt;(key));</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L58">            value = defaultValue(key);</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">            if (value != null) {</span>
+<span class="nc" id="L60">                V previousValue = target.putIfAbsent(new WeakKey&lt;K&gt;(key, this), value);</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">                if (previousValue != null) {</span>
+<span class="nc" id="L62">                    value = previousValue;</span>
+                }
+            }
+        }
+<span class="fc" id="L66">        return value;</span>
+    }
+
+    /**
+     * @param key The key of the entry.
+     * @return {@code true} if the key already defines a value.
+     */
+    @SuppressWarnings(&quot;CollectionIncompatibleType&quot;)
+    public boolean containsKey(K key) {
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">        if (key == null) throw new NullPointerException();</span>
+<span class="fc" id="L76">        return target.containsKey(new LatentKey&lt;K&gt;(key));</span>
+    }
+
+    /**
+     * @param key   The key of the entry.
+     * @param value The value of the entry.
+     * @return The previous entry or {@code null} if it does not exist.
+     */
+    public V put(K key, V value) {
+<span class="pc bpc" id="L85" title="2 of 4 branches missed.">        if (key == null || value == null) throw new NullPointerException();</span>
+<span class="fc" id="L86">        return target.put(new WeakKey&lt;K&gt;(key, this), value);</span>
+    }
+
+    /**
+     * @param key The key of the entry.
+     * @return The removed entry or {@code null} if it does not exist.
+     */
+    @SuppressWarnings(&quot;CollectionIncompatibleType&quot;)
+    public V remove(K key) {
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">        if (key == null) throw new NullPointerException();</span>
+<span class="fc" id="L96">        return target.remove(new LatentKey&lt;K&gt;(key));</span>
+    }
+
+    /**
+     * Clears the entire map.
+     */
+    public void clear() {
+<span class="nc" id="L103">        target.clear();</span>
+<span class="nc" id="L104">    }</span>
+
+    /**
+     * Creates a default value. There is no guarantee that the requested value will be set as a once it is created
+     * in case that another thread requests a value for a key concurrently.
+     *
+     * @param key The key for which to create a default value.
+     * @return The default value for a key without value or {@code null} for not defining a default value.
+     */
+    protected V defaultValue(K key) {
+<span class="fc" id="L114">        return null;</span>
+    }
+
+    /**
+     * @return The cleaner thread or {@code null} if no such thread was set.
+     */
+    public Thread getCleanerThread() {
+<span class="nc" id="L121">        return thread;</span>
+    }
+
+    /**
+     * Cleans all unused references.
+     */
+    public void expungeStaleEntries() {
+        Reference&lt;?&gt; reference;
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        while ((reference = poll()) != null) {</span>
+<span class="fc" id="L130">            target.remove(reference);</span>
+        }
+<span class="fc" id="L132">    }</span>
+
+    /**
+     * Returns the approximate size of this map where the returned number is at least as big as the actual number of entries.
+     *
+     * @return The minimum size of this map.
+     */
+    public int approximateSize() {
+<span class="nc" id="L140">        return target.size();</span>
+    }
+
+    @Override
+    public void run() {
+        try {
+            while (true) {
+<span class="nc" id="L147">                target.remove(remove());</span>
+            }
+<span class="nc" id="L149">        } catch (InterruptedException ignored) {</span>
+<span class="nc" id="L150">            clear();</span>
+        }
+<span class="nc" id="L152">    }</span>
+
+    @Override
+    public Iterator&lt;Map.Entry&lt;K, V&gt;&gt; iterator() {
+<span class="nc" id="L156">        return new EntryIterator(target.entrySet().iterator());</span>
+    }
+
+    /*
+     * Why this works:
+     * ---------------
+     *
+     * Note that this map only supports reference equality for keys and uses system hash codes. Also, for the
+     * WeakKey instances to function correctly, we are voluntarily breaking the Java API contract for
+     * hashCode/equals of these instances.
+     *
+     *
+     * System hash codes are immutable and can therefore be computed prematurely and are stored explicitly
+     * within the WeakKey instances. This way, we always know the correct hash code of a key and always
+     * end up in the correct bucket of our target map. This remains true even after the weakly referenced
+     * key is collected.
+     *
+     * If we are looking up the value of the current key via WeakConcurrentMap::get or any other public
+     * API method, we know that any value associated with this key must still be in the map as the mere
+     * existence of this key makes it ineligible for garbage collection. Therefore, looking up a value
+     * using another WeakKey wrapper guarantees a correct result.
+     *
+     * If we are looking up the map entry of a WeakKey after polling it from the reference queue, we know
+     * that the actual key was already collected and calling WeakKey::get returns null for both the polled
+     * instance and the instance within the map. Since we explicitly stored the identity hash code for the
+     * referenced value, it is however trivial to identify the correct bucket. From this bucket, the first
+     * weak key with a null reference is removed. Due to hash collision, we do not know if this entry
+     * represents the weak key. However, we do know that the reference queue polls at least as many weak
+     * keys as there are stale map entries within the target map. If no key is ever removed from the map
+     * explicitly, the reference queue eventually polls exactly as many weak keys as there are stale entries.
+     *
+     * Therefore, we can guarantee that there is no memory leak.
+     */
+
+    private static class WeakKey&lt;T&gt; extends WeakReference&lt;T&gt; {
+
+        private final int hashCode;
+
+        WeakKey(T key, ReferenceQueue&lt;? super T&gt; queue) {
+<span class="fc" id="L195">            super(key, queue);</span>
+<span class="fc" id="L196">            hashCode = System.identityHashCode(key);</span>
+<span class="fc" id="L197">        }</span>
+
+        @Override
+        public int hashCode() {
+<span class="fc" id="L201">            return hashCode;</span>
+        }
+
+        @Override
+        public boolean equals(Object other) {
+<span class="pc bpc" id="L206" title="1 of 2 branches missed.">            if (other instanceof LatentKey&lt;?&gt;) {</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">                return ((LatentKey&lt;?&gt;) other).key == get();</span>
+            } else {
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">                return ((WeakKey&lt;?&gt;) other).get() == get();</span>
+            }
+        }
+    }
+
+    /*
+     * A latent key must only be used for looking up instances within a map. For this to work, it implements an identical contract for
+     * hash code and equals as the WeakKey implementation. At the same time, the latent key implementation does not extend WeakReference
+     * and avoids the overhead that a weak reference implies.
+     */
+
+    private static class LatentKey&lt;T&gt; {
+
+        final T key;
+
+        private final int hashCode;
+
+<span class="fc" id="L226">        LatentKey(T key) {</span>
+<span class="fc" id="L227">            this.key = key;</span>
+<span class="fc" id="L228">            hashCode = System.identityHashCode(key);</span>
+<span class="fc" id="L229">        }</span>
+
+        @Override
+        public boolean equals(Object other) {
+<span class="pc bpc" id="L233" title="1 of 2 branches missed.">            if (other instanceof LatentKey&lt;?&gt;) {</span>
+<span class="nc bnc" id="L234" title="All 2 branches missed.">                return ((LatentKey&lt;?&gt;) other).key == key;</span>
+            } else {
+<span class="pc bpc" id="L236" title="1 of 2 branches missed.">                return ((WeakKey&lt;?&gt;) other).get() == key;</span>
+            }
+        }
+
+        @Override
+        public int hashCode() {
+<span class="fc" id="L242">            return hashCode;</span>
+        }
+    }
+
+    /**
+     * A {@link WeakConcurrentMap} where stale entries are removed as a side effect of interacting with this map.
+     */
+    public static class WithInlinedExpunction&lt;K, V&gt; extends WeakConcurrentMap&lt;K, V&gt; {
+
+        public WithInlinedExpunction() {
+<span class="fc" id="L252">            super(false);</span>
+<span class="fc" id="L253">        }</span>
+
+        @Override
+        public V get(K key) {
+<span class="fc" id="L257">            expungeStaleEntries();</span>
+<span class="fc" id="L258">            return super.get(key);</span>
+        }
+
+        @Override
+        public boolean containsKey(K key) {
+<span class="fc" id="L263">            expungeStaleEntries();</span>
+<span class="fc" id="L264">            return super.containsKey(key);</span>
+        }
+
+        @Override
+        public V put(K key, V value) {
+<span class="fc" id="L269">            expungeStaleEntries();</span>
+<span class="fc" id="L270">            return super.put(key, value);</span>
+        }
+
+        @Override
+        public V remove(K key) {
+<span class="fc" id="L275">            expungeStaleEntries();</span>
+<span class="fc" id="L276">            return super.remove(key);</span>
+        }
+
+        @Override
+        public Iterator&lt;Map.Entry&lt;K, V&gt;&gt; iterator() {
+<span class="nc" id="L281">            expungeStaleEntries();</span>
+<span class="nc" id="L282">            return super.iterator();</span>
+        }
+
+        @Override
+        public int approximateSize() {
+<span class="nc" id="L287">            expungeStaleEntries();</span>
+<span class="nc" id="L288">            return super.approximateSize();</span>
+        }
+    }
+
+    private class EntryIterator implements Iterator&lt;Map.Entry&lt;K, V&gt;&gt; {
+
+        private final Iterator&lt;Map.Entry&lt;WeakKey&lt;K&gt;, V&gt;&gt; iterator;
+
+        private Map.Entry&lt;WeakKey&lt;K&gt;, V&gt; nextEntry;
+
+        private K nextKey;
+
+<span class="nc" id="L300">        private EntryIterator(Iterator&lt;Map.Entry&lt;WeakKey&lt;K&gt;, V&gt;&gt; iterator) {</span>
+<span class="nc" id="L301">            this.iterator = iterator;</span>
+<span class="nc" id="L302">            findNext();</span>
+<span class="nc" id="L303">        }</span>
+
+        private void findNext() {
+<span class="nc bnc" id="L306" title="All 2 branches missed.">            while (iterator.hasNext()) {</span>
+<span class="nc" id="L307">                nextEntry = iterator.next();</span>
+<span class="nc" id="L308">                nextKey = nextEntry.getKey().get();</span>
+<span class="nc bnc" id="L309" title="All 2 branches missed.">                if (nextKey != null) {</span>
+<span class="nc" id="L310">                    return;</span>
+                }
+            }
+<span class="nc" id="L313">            nextEntry = null;</span>
+<span class="nc" id="L314">            nextKey = null;</span>
+<span class="nc" id="L315">        }</span>
+
+        @Override
+        public boolean hasNext() {
+<span class="nc bnc" id="L319" title="All 2 branches missed.">            return nextKey != null;</span>
+        }
+
+        @Override
+        public Map.Entry&lt;K, V&gt; next() {
+<span class="nc bnc" id="L324" title="All 2 branches missed.">            if (nextKey == null) {</span>
+<span class="nc" id="L325">                throw new NoSuchElementException();</span>
+            }
+            try {
+<span class="nc" id="L328">                return new SimpleEntry(nextKey, nextEntry);</span>
+            } finally {
+<span class="nc" id="L330">                findNext();</span>
+            }
+        }
+
+        @Override
+        public void remove() {
+<span class="nc" id="L336">            throw new UnsupportedOperationException();</span>
+        }
+    }
+
+    private class SimpleEntry implements Map.Entry&lt;K, V&gt; {
+
+        private final K key;
+
+        final Map.Entry&lt;WeakKey&lt;K&gt;, V&gt; entry;
+
+<span class="nc" id="L346">        private SimpleEntry(K key, Map.Entry&lt;WeakKey&lt;K&gt;, V&gt; entry) {</span>
+<span class="nc" id="L347">            this.key = key;</span>
+<span class="nc" id="L348">            this.entry = entry;</span>
+<span class="nc" id="L349">        }</span>
+
+        @Override
+        public K getKey() {
+<span class="nc" id="L353">            return key;</span>
+        }
+
+        @Override
+        public V getValue() {
+<span class="nc" id="L358">            return entry.getValue();</span>
+        }
+
+        @Override
+        public V setValue(V value) {
+<span class="nc bnc" id="L363" title="All 2 branches missed.">            if (value == null) throw new NullPointerException();</span>
+<span class="nc" id="L364">            return entry.setValue(value);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

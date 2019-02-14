@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefaultMockitoPlugins.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.configuration.plugins</a> &gt; <span class="el_source">DefaultMockitoPlugins.java</span></div><h1>DefaultMockitoPlugins.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.configuration.plugins;
+
+import org.mockito.internal.creation.instance.InstantiatorProvider2Adapter;
+import org.mockito.plugins.AnnotationEngine;
+import org.mockito.plugins.InstantiatorProvider;
+import org.mockito.plugins.InstantiatorProvider2;
+import org.mockito.plugins.MockMaker;
+import org.mockito.plugins.MockitoLogger;
+import org.mockito.plugins.MockitoPlugins;
+import org.mockito.plugins.PluginSwitch;
+import org.mockito.plugins.StackTraceCleanerProvider;
+
+import java.util.HashMap;
+import java.util.Map;
+
+<span class="fc" id="L20">class DefaultMockitoPlugins implements MockitoPlugins {</span>
+
+<span class="fc" id="L22">    private final static Map&lt;String, String&gt; DEFAULT_PLUGINS = new HashMap&lt;String, String&gt;();</span>
+    static final String INLINE_ALIAS = &quot;mock-maker-inline&quot;;
+
+    static {
+        //Keep the mapping: plugin interface name -&gt; plugin implementation class name
+<span class="fc" id="L27">        DEFAULT_PLUGINS.put(PluginSwitch.class.getName(), DefaultPluginSwitch.class.getName());</span>
+<span class="fc" id="L28">        DEFAULT_PLUGINS.put(MockMaker.class.getName(), &quot;org.mockito.internal.creation.bytebuddy.ByteBuddyMockMaker&quot;);</span>
+<span class="fc" id="L29">        DEFAULT_PLUGINS.put(StackTraceCleanerProvider.class.getName(), &quot;org.mockito.internal.exceptions.stacktrace.DefaultStackTraceCleanerProvider&quot;);</span>
+<span class="fc" id="L30">        DEFAULT_PLUGINS.put(InstantiatorProvider2.class.getName(), &quot;org.mockito.internal.creation.instance.DefaultInstantiatorProvider&quot;);</span>
+<span class="fc" id="L31">        DEFAULT_PLUGINS.put(AnnotationEngine.class.getName(), &quot;org.mockito.internal.configuration.InjectingAnnotationEngine&quot;);</span>
+<span class="fc" id="L32">        DEFAULT_PLUGINS.put(INLINE_ALIAS, &quot;org.mockito.internal.creation.bytebuddy.InlineByteBuddyMockMaker&quot;);</span>
+<span class="fc" id="L33">        DEFAULT_PLUGINS.put(MockitoLogger.class.getName(), &quot;org.mockito.internal.util.ConsoleMockitoLogger&quot;);</span>
+<span class="fc" id="L34">    }</span>
+
+    @Override
+    public &lt;T&gt; T getDefaultPlugin(Class&lt;T&gt; pluginType) {
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (pluginType == InstantiatorProvider.class) {</span>
+            //the implementation class is not configured via map so that we can reduce duplication
+            //(ensure that we are adapting the currently configured default implementation for InstantiatorProvider2)
+<span class="fc" id="L41">            String className = DEFAULT_PLUGINS.get(InstantiatorProvider2.class.getName());</span>
+<span class="fc" id="L42">            return pluginType.cast(new InstantiatorProvider2Adapter(create(InstantiatorProvider2.class, className)));</span>
+        } else {
+<span class="fc" id="L44">            String className = DEFAULT_PLUGINS.get(pluginType.getName());</span>
+<span class="fc" id="L45">            return create(pluginType, className);</span>
+        }
+    }
+
+    String getDefaultPluginClass(String classOrAlias) {
+<span class="fc" id="L50">        return DEFAULT_PLUGINS.get(classOrAlias);</span>
+    }
+
+    /**
+     * Creates an instance of given plugin type, using specific implementation class.
+     */
+    private &lt;T&gt; T create(Class&lt;T&gt; pluginType, String className) {
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        if (className == null) {</span>
+<span class="nc" id="L58">            throw new IllegalStateException(</span>
+<span class="nc" id="L59">                &quot;No default implementation for requested Mockito plugin type: &quot; + pluginType.getName() + &quot;\n&quot;</span>
+                    + &quot;Is this a valid Mockito plugin type? If yes, please report this problem to Mockito team.\n&quot;
+                    + &quot;Otherwise, please check if you are passing valid plugin type.\n&quot;
+                    + &quot;Examples of valid plugin types: MockMaker, StackTraceCleanerProvider.&quot;);
+        }
+        try {
+            // Default implementation. Use our own ClassLoader instead of the context
+            // ClassLoader, as the default implementation is assumed to be part of
+            // Mockito and may not be available via the context ClassLoader.
+<span class="fc" id="L68">            return pluginType.cast(Class.forName(className).newInstance());</span>
+<span class="nc" id="L69">        } catch (Exception e) {</span>
+<span class="nc" id="L70">            throw new IllegalStateException(&quot;Internal problem occurred, please report it. &quot; +</span>
+                &quot;Mockito is unable to load the default implementation of class that is a part of Mockito distribution. &quot; +
+                &quot;Failed to load &quot; + pluginType, e);
+        }
+    }
+
+    @Override
+    public MockMaker getInlineMockMaker() {
+<span class="fc" id="L78">        return create(MockMaker.class, DEFAULT_PLUGINS.get(INLINE_ALIAS));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

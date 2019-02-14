@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DetachedThreadLocal.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.util.concurrent</a> &gt; <span class="el_source">DetachedThreadLocal.java</span></div><h1>DetachedThreadLocal.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.util.concurrent;
+
+/**
+ * &lt;p&gt;
+ * A detached local that allows for explicit control of setting and removing values from a thread-local
+ * context.
+ * &lt;/p&gt;
+ * Instances of this class are non-blocking and fully thread safe.
+ */
+public class DetachedThreadLocal&lt;T&gt; implements Runnable {
+
+    final WeakConcurrentMap&lt;Thread, T&gt; map;
+
+<span class="nc" id="L18">    public DetachedThreadLocal(Cleaner cleaner) {</span>
+<span class="nc bnc" id="L19" title="All 3 branches missed.">        switch (cleaner) {</span>
+            case THREAD:
+            case MANUAL:
+<span class="nc bnc" id="L22" title="All 2 branches missed.">                map = new WeakConcurrentMap&lt;Thread, T&gt;(cleaner == Cleaner.THREAD) {</span>
+                    @Override
+                    protected T defaultValue(Thread key) {
+<span class="nc" id="L25">                        return DetachedThreadLocal.this.initialValue(key);</span>
+                    }
+                };
+<span class="nc" id="L28">                break;</span>
+            case INLINE:
+<span class="nc" id="L30">                map = new WeakConcurrentMap.WithInlinedExpunction&lt;Thread, T&gt;() {</span>
+                    @Override
+                    protected T defaultValue(Thread key) {
+<span class="nc" id="L33">                        return DetachedThreadLocal.this.initialValue(key);</span>
+                    }
+                };
+<span class="nc" id="L36">                break;</span>
+            default:
+<span class="nc" id="L38">                throw new AssertionError();</span>
+        }
+<span class="nc" id="L40">    }</span>
+
+    public T get() {
+<span class="nc" id="L43">        return map.get(Thread.currentThread());</span>
+    }
+
+    public void set(T value) {
+<span class="nc" id="L47">        map.put(Thread.currentThread(), value);</span>
+<span class="nc" id="L48">    }</span>
+
+    public void clear() {
+<span class="nc" id="L51">        map.remove(Thread.currentThread());</span>
+<span class="nc" id="L52">    }</span>
+
+    /**
+     * Clears all thread local references for all threads.
+     */
+    public void clearAll() {
+<span class="nc" id="L58">        map.clear();</span>
+<span class="nc" id="L59">    }</span>
+
+    /**
+     * @param thread The thread to which this thread's thread local value should be pushed.
+     * @return The value being set.
+     */
+    public T pushTo(Thread thread) {
+<span class="nc" id="L66">        T value = get();</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (value != null) {</span>
+<span class="nc" id="L68">            map.put(thread, inheritValue(value));</span>
+        }
+<span class="nc" id="L70">        return value;</span>
+    }
+
+    /**
+     * @param thread The thread from which the thread thread local value should be fetched.
+     * @return The value being set.
+     */
+    public T fetchFrom(Thread thread) {
+<span class="nc" id="L78">        T value = map.get(thread);</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        if (value != null) {</span>
+<span class="nc" id="L80">            set(inheritValue(value));</span>
+        }
+<span class="nc" id="L82">        return value;</span>
+    }
+
+    /**
+     * @param thread The thread for which to set a thread-local value.
+     * @return The value associated with this thread.
+     */
+    public T get(Thread thread) {
+<span class="nc" id="L90">        return map.get(thread);</span>
+    }
+
+    /**
+     * @param thread The thread for which to set a thread-local value.
+     * @param value  The value to set.
+     */
+    public void define(Thread thread, T value) {
+<span class="nc" id="L98">        map.put(thread, value);</span>
+<span class="nc" id="L99">    }</span>
+
+    /**
+     * @param thread The thread for which an initial value is created.
+     * @return The initial value for any thread local. If no default is set, the default value is {@code null}.
+     */
+    protected T initialValue(Thread thread) {
+<span class="nc" id="L106">        return null;</span>
+    }
+
+    /**
+     * @param value The value that is inherited.
+     * @return The inherited value.
+     */
+    protected T inheritValue(T value) {
+<span class="nc" id="L114">        return value;</span>
+    }
+
+    /**
+     * @return The weak map that backs this detached thread local.
+     */
+    public WeakConcurrentMap&lt;Thread, T&gt; getBackingMap() {
+<span class="nc" id="L121">        return map;</span>
+    }
+
+    @Override
+    public void run() {
+<span class="nc" id="L126">        map.run();</span>
+<span class="nc" id="L127">    }</span>
+
+    /**
+     * Determines the cleaning format. A reference is removed either by an explicitly started cleaner thread
+     * associated with this instance ({@link Cleaner#THREAD}), as a result of interacting with this thread local
+     * from any thread ({@link Cleaner#INLINE} or manually by submitting the detached thread local to a thread
+     * ({@link Cleaner#MANUAL}).
+     */
+<span class="fc" id="L135">    public enum Cleaner {</span>
+<span class="fc" id="L136">        THREAD, INLINE, MANUAL</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

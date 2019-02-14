@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SubclassInjectionLoader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.creation.bytebuddy</a> &gt; <span class="el_source">SubclassInjectionLoader.java</span></div><h1>SubclassInjectionLoader.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.creation.bytebuddy;
+
+import net.bytebuddy.dynamic.loading.ClassInjector;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
+import org.mockito.codegen.InjectionBase;
+import org.mockito.exceptions.base.MockitoException;
+import org.mockito.internal.util.Platform;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+import static org.mockito.internal.util.StringUtil.join;
+
+class SubclassInjectionLoader implements SubclassLoader {
+
+<span class="fc" id="L20">    private static final String ERROR_MESSAGE = join(&quot;The current JVM does not support any class injection mechanism.&quot;,</span>
+        &quot;&quot;,
+        &quot;Currently, Mockito supports injection via neither by method handle lookups or using sun.misc.Unsafe&quot;,
+        &quot;Neither seems to be available on your current JVM.&quot;);
+
+    private final SubclassLoader loader;
+
+<span class="fc" id="L27">    SubclassInjectionLoader() {</span>
+<span class="pc bpc" id="L28" title="2 of 4 branches missed.">        if (!Boolean.getBoolean(&quot;org.mockito.internal.noUnsafeInjection&quot;) &amp;&amp; ClassInjector.UsingReflection.isAvailable()) {</span>
+<span class="fc" id="L29">            this.loader = new WithReflection();</span>
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        } else if (ClassInjector.UsingLookup.isAvailable()) {</span>
+<span class="nc" id="L31">            this.loader = tryLookup();</span>
+        } else {
+<span class="nc" id="L33">            throw new MockitoException(join(ERROR_MESSAGE, &quot;&quot;, Platform.describe()));</span>
+        }
+<span class="fc" id="L35">    }</span>
+
+    private static SubclassLoader tryLookup() {
+        try {
+<span class="nc" id="L39">            Class&lt;?&gt; methodHandles = Class.forName(&quot;java.lang.invoke.MethodHandles&quot;);</span>
+<span class="nc" id="L40">            Object lookup = methodHandles.getMethod(&quot;lookup&quot;).invoke(null);</span>
+<span class="nc" id="L41">            Method privateLookupIn = methodHandles.getMethod(&quot;privateLookupIn&quot;, Class.class, Class.forName(&quot;java.lang.invoke.MethodHandles$Lookup&quot;));</span>
+<span class="nc" id="L42">            Object codegenLookup = privateLookupIn.invoke(null, InjectionBase.class, lookup);</span>
+<span class="nc" id="L43">            return new WithLookup(lookup, codegenLookup, privateLookupIn);</span>
+<span class="nc" id="L44">        } catch (Exception exception) {</span>
+<span class="nc" id="L45">            throw new MockitoException(join(ERROR_MESSAGE, &quot;&quot;, Platform.describe()), exception);</span>
+        }
+    }
+
+    private static class WithReflection implements SubclassLoader {
+
+        @Override
+        public boolean isDisrespectingOpenness() {
+<span class="fc" id="L53">            return true;</span>
+        }
+
+        @Override
+        public ClassLoadingStrategy&lt;ClassLoader&gt; resolveStrategy(Class&lt;?&gt; mockedType, ClassLoader classLoader, boolean localMock) {
+<span class="fc bfc" id="L58" title="All 2 branches covered.">            return ClassLoadingStrategy.Default.INJECTION.with(localMock ? mockedType.getProtectionDomain() : InjectionBase.class.getProtectionDomain());</span>
+        }
+    }
+
+    private static class WithLookup implements SubclassLoader {
+
+        private final Object lookup;
+
+        private final Object codegenLookup;
+
+        private final Method privateLookupIn;
+
+<span class="nc" id="L70">        WithLookup(Object lookup, Object codegenLookup, Method privateLookupIn) {</span>
+<span class="nc" id="L71">            this.lookup = lookup;</span>
+<span class="nc" id="L72">            this.codegenLookup = codegenLookup;</span>
+<span class="nc" id="L73">            this.privateLookupIn = privateLookupIn;</span>
+<span class="nc" id="L74">        }</span>
+
+        @Override
+        public boolean isDisrespectingOpenness() {
+<span class="nc" id="L78">            return false;</span>
+        }
+
+        @Override
+        public ClassLoadingStrategy&lt;ClassLoader&gt; resolveStrategy(Class&lt;?&gt; mockedType, ClassLoader classLoader, boolean localMock) {
+<span class="nc bnc" id="L83" title="All 2 branches missed.">            if (localMock) {</span>
+                try {
+                    Object privateLookup;
+                    try {
+<span class="nc" id="L87">                        privateLookup = privateLookupIn.invoke(null, mockedType, lookup);</span>
+<span class="nc" id="L88">                    } catch (InvocationTargetException exception) {</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">                        if (exception.getCause() instanceof IllegalAccessException) {</span>
+<span class="nc" id="L90">                            return ClassLoadingStrategy.Default.WRAPPER.with(mockedType.getProtectionDomain());</span>
+                        } else {
+<span class="nc" id="L92">                            throw exception.getCause();</span>
+                        }
+<span class="nc" id="L94">                    }</span>
+<span class="nc" id="L95">                    return ClassLoadingStrategy.UsingLookup.of(privateLookup);</span>
+<span class="nc" id="L96">                } catch (Throwable exception) {</span>
+<span class="nc" id="L97">                    throw new MockitoException(join(</span>
+                        &quot;The Java module system prevents Mockito from defining a mock class in the same package as &quot; + mockedType,
+                        &quot;&quot;,
+                        &quot;To overcome this, you must open and export the mocked type to Mockito.&quot;,
+                        &quot;Remember that you can also do so programmatically if the mocked class is defined by the same module as your test code&quot;,
+                        exception
+                    ));
+                }
+<span class="nc bnc" id="L105" title="All 2 branches missed.">            } else if (classLoader == InjectionBase.class.getClassLoader()) {</span>
+<span class="nc" id="L106">                return ClassLoadingStrategy.UsingLookup.of(codegenLookup);</span>
+            } else {
+<span class="nc" id="L108">                return ClassLoadingStrategy.Default.WRAPPER.with(mockedType.getProtectionDomain());</span>
+            }
+        }
+    }
+
+    @Override
+    public boolean isDisrespectingOpenness() {
+<span class="fc" id="L115">        return loader.isDisrespectingOpenness();</span>
+    }
+
+    @Override
+    public ClassLoadingStrategy&lt;ClassLoader&gt; resolveStrategy(Class&lt;?&gt; mockedType, ClassLoader classLoader, boolean localMock) {
+<span class="fc" id="L120">        return loader.resolveStrategy(mockedType, classLoader, localMock);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

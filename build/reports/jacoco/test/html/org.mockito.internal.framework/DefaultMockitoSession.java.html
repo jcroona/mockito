@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefaultMockitoSession.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.framework</a> &gt; <span class="el_source">DefaultMockitoSession.java</span></div><h1>DefaultMockitoSession.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.framework;
+
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoSession;
+import org.mockito.exceptions.misusing.RedundantListenerException;
+import org.mockito.internal.exceptions.Reporter;
+import org.mockito.internal.junit.TestFinishedEvent;
+import org.mockito.internal.junit.UniversalTestListener;
+import org.mockito.plugins.MockitoLogger;
+import org.mockito.quality.Strictness;
+
+import java.util.List;
+
+public class DefaultMockitoSession implements MockitoSession {
+
+    private final String name;
+    private final UniversalTestListener listener;
+
+<span class="fc" id="L24">    public DefaultMockitoSession(List&lt;Object&gt; testClassInstances, String name, Strictness strictness, MockitoLogger logger) {</span>
+<span class="fc" id="L25">        this.name = name;</span>
+<span class="fc" id="L26">        listener = new UniversalTestListener(strictness, logger);</span>
+        try {
+            //So that the listener can capture mock creation events
+<span class="fc" id="L29">            Mockito.framework().addListener(listener);</span>
+<span class="fc" id="L30">        } catch (RedundantListenerException e) {</span>
+<span class="nc" id="L31">            Reporter.unfinishedMockingSession();</span>
+<span class="fc" id="L32">        }</span>
+        try {
+<span class="fc bfc" id="L34" title="All 2 branches covered.">            for (Object testClassInstance : testClassInstances) {</span>
+<span class="fc" id="L35">                MockitoAnnotations.initMocks(testClassInstance);</span>
+<span class="fc" id="L36">            }</span>
+<span class="fc" id="L37">        } catch (RuntimeException e) {</span>
+            //clean up in case 'initMocks' fails
+<span class="fc" id="L39">            listener.setListenerDirty();</span>
+<span class="fc" id="L40">            throw e;</span>
+<span class="fc" id="L41">        }</span>
+<span class="fc" id="L42">    }</span>
+
+    @Override
+    public void setStrictness(Strictness strictness) {
+<span class="fc" id="L46">        listener.setStrictness(strictness);</span>
+<span class="fc" id="L47">    }</span>
+
+    @Override
+    public void finishMocking() {
+<span class="fc" id="L51">        finishMocking(null);</span>
+<span class="fc" id="L52">    }</span>
+
+    @Override
+    public void finishMocking(final Throwable failure) {
+        //Cleaning up the state, we no longer need the listener hooked up
+        //The listener implements MockCreationListener and at this point
+        //we no longer need to listen on mock creation events. We are wrapping up the session
+<span class="fc" id="L59">        Mockito.framework().removeListener(listener);</span>
+
+        //Emit test finished event so that validation such as strict stubbing can take place
+<span class="fc" id="L62">        listener.testFinished(new TestFinishedEvent() {</span>
+            @Override
+            public Throwable getFailure() {
+<span class="fc" id="L65">                return failure;</span>
+            }
+            @Override
+            public String getTestName() {
+<span class="fc" id="L69">                return name;</span>
+            }
+        });
+
+        //Validate only when there is no test failure to avoid reporting multiple problems
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (failure == null) {</span>
+            //Finally, validate user's misuse of Mockito framework.
+<span class="fc" id="L76">            Mockito.validateMockitoUsage();</span>
+        }
+<span class="fc" id="L78">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

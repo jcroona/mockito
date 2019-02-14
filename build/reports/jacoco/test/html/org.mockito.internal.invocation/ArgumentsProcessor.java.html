@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArgumentsProcessor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.invocation</a> &gt; <span class="el_source">ArgumentsProcessor.java</span></div><h1>ArgumentsProcessor.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2007 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.invocation;
+
+import org.mockito.ArgumentMatcher;
+import org.mockito.internal.matchers.ArrayEquals;
+import org.mockito.internal.matchers.Equals;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * by Szczepan Faber, created at: 3/31/12
+ */
+<span class="nc" id="L18">public class ArgumentsProcessor {</span>
+    // drops hidden synthetic parameters (last continuation parameter from Kotlin suspending functions)
+    // and expands varargs
+    public static Object[] expandArgs(MockitoMethod method, Object[] args) {
+<span class="fc" id="L22">        int nParams = method.getParameterTypes().length;</span>
+<span class="pc bpc" id="L23" title="1 of 4 branches missed.">        if (args != null &amp;&amp; args.length &gt; nParams)</span>
+<span class="fc" id="L24">            args = Arrays.copyOf(args, nParams); // drop extra args (currently -- Kotlin continuation synthetic arg)</span>
+<span class="fc" id="L25">        return expandVarArgs(method.isVarArgs(), args);</span>
+    }
+
+    // expands array varArgs that are given by runtime (1, [a, b]) into true
+    // varArgs (1, a, b);
+    private static Object[] expandVarArgs(final boolean isVarArgs, final Object[] args) {
+<span class="pc bpc" id="L31" title="1 of 8 branches missed.">        if (!isVarArgs || isNullOrEmpty(args) || args[args.length - 1] != null &amp;&amp; !args[args.length - 1].getClass().isArray()) {</span>
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">            return args == null ? new Object[0] : args;</span>
+        }
+
+<span class="fc" id="L35">        final int nonVarArgsCount = args.length - 1;</span>
+        Object[] varArgs;
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        if (args[nonVarArgsCount] == null) {</span>
+            // in case someone deliberately passed null varArg array
+<span class="fc" id="L39">            varArgs = new Object[] { null };</span>
+        } else {
+<span class="fc" id="L41">            varArgs = ArrayEquals.createObjectArray(args[nonVarArgsCount]);</span>
+        }
+<span class="fc" id="L43">        final int varArgsCount = varArgs.length;</span>
+<span class="fc" id="L44">        Object[] newArgs = new Object[nonVarArgsCount + varArgsCount];</span>
+<span class="fc" id="L45">        System.arraycopy(args, 0, newArgs, 0, nonVarArgsCount);</span>
+<span class="fc" id="L46">        System.arraycopy(varArgs, 0, newArgs, nonVarArgsCount, varArgsCount);</span>
+<span class="fc" id="L47">        return newArgs;</span>
+    }
+
+    private static &lt;T&gt; boolean isNullOrEmpty(T[] array) {
+<span class="pc bpc" id="L51" title="2 of 4 branches missed.">        return array == null || array.length == 0;</span>
+    }
+
+    public static List&lt;ArgumentMatcher&gt; argumentsToMatchers(Object[] arguments) {
+<span class="fc" id="L55">        List&lt;ArgumentMatcher&gt; matchers = new ArrayList&lt;ArgumentMatcher&gt;(arguments.length);</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        for (Object arg : arguments) {</span>
+<span class="fc bfc" id="L57" title="All 4 branches covered.">            if (arg != null &amp;&amp; arg.getClass().isArray()) {</span>
+<span class="fc" id="L58">                matchers.add(new ArrayEquals(arg));</span>
+            } else {
+<span class="fc" id="L60">                matchers.add(new Equals(arg));</span>
+            }
+        }
+<span class="fc" id="L63">        return matchers;</span>
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

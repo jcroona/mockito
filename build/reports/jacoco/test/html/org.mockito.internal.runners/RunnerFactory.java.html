@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RunnerFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.runners</a> &gt; <span class="el_source">RunnerFactory.java</span></div><h1>RunnerFactory.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2007 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.runners;
+
+import org.mockito.exceptions.base.MockitoException;
+import org.mockito.internal.configuration.plugins.Plugins;
+import org.mockito.internal.junit.MismatchReportingTestListener;
+import org.mockito.internal.junit.MockitoTestListener;
+import org.mockito.internal.junit.NoOpTestListener;
+import org.mockito.internal.junit.StrictStubsRunnerTestListener;
+import org.mockito.internal.runners.util.RunnerProvider;
+import org.mockito.internal.util.Supplier;
+
+import java.lang.reflect.InvocationTargetException;
+
+import static org.mockito.internal.runners.util.TestMethodsFinder.hasTestMethods;
+
+/**
+ * Creates instances of Mockito JUnit Runner in a safe way, e.g. detecting inadequate version of JUnit, etc.
+ */
+<span class="fc" id="L23">public class RunnerFactory {</span>
+
+    /**
+     * Creates silent runner implementation
+     */
+    public InternalRunner create(Class&lt;?&gt; klass) throws InvocationTargetException {
+<span class="fc" id="L29">        return create(klass, new Supplier&lt;MockitoTestListener&gt;() {</span>
+            public MockitoTestListener get() {
+<span class="fc" id="L31">                return new NoOpTestListener();</span>
+            }
+        });
+    }
+
+    /**
+     * Creates strict runner implementation
+     */
+    public InternalRunner createStrict(Class&lt;?&gt; klass) throws InvocationTargetException {
+<span class="fc" id="L40">        return create(klass, new Supplier&lt;MockitoTestListener&gt;() {</span>
+            public MockitoTestListener get() {
+<span class="fc" id="L42">                return new MismatchReportingTestListener(Plugins.getMockitoLogger());</span>
+            }
+        });
+    }
+
+    /**
+     * Creates strict stubs runner implementation
+     *
+     * TODO, let's try to apply Brice suggestion and use switch + Strictness
+     */
+    public InternalRunner createStrictStubs(Class&lt;?&gt; klass) throws InvocationTargetException {
+<span class="fc" id="L53">        return create(klass, new Supplier&lt;MockitoTestListener&gt;() {</span>
+            public MockitoTestListener get() {
+<span class="fc" id="L55">                return new StrictStubsRunnerTestListener();</span>
+            }
+        });
+    }
+
+    /**
+     * Creates runner implementation with provided listener supplier
+     */
+    public InternalRunner create(Class&lt;?&gt; klass, Supplier&lt;MockitoTestListener&gt; listenerSupplier) throws InvocationTargetException {
+        try {
+<span class="fc" id="L65">            String runnerClassName = &quot;org.mockito.internal.runners.DefaultInternalRunner&quot;;</span>
+            //Warning: I'm using String literal on purpose!
+            //When JUnit is not on classpath, we want the code to throw exception here so that we can catch it
+            //If we statically link the class, we will get Error when class is loaded
+<span class="fc" id="L69">            return new RunnerProvider().newInstance(runnerClassName, klass, listenerSupplier);</span>
+<span class="fc" id="L70">        } catch (InvocationTargetException e) {</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">            if (!hasTestMethods(klass)) {</span>
+<span class="fc" id="L72">                throw new MockitoException(</span>
+                    &quot;\n&quot; +
+                    &quot;\n&quot; +
+<span class="fc" id="L75">                    &quot;No tests found in &quot; + klass.getSimpleName() + &quot;\n&quot; +</span>
+                    &quot;Is the method annotated with @Test?\n&quot; +
+                    &quot;Is the method public?\n&quot;
+                    , e);
+            }
+<span class="nc" id="L80">            throw e;</span>
+<span class="nc" id="L81">        } catch (Throwable t) {</span>
+<span class="nc" id="L82">            throw new MockitoException(</span>
+                    &quot;\n&quot; +
+                    &quot;\n&quot; +
+                    &quot;MockitoRunner can only be used with JUnit 4.5 or higher.\n&quot; +
+                    &quot;You can upgrade your JUnit version or write your own Runner (please consider contributing your runner to the Mockito community).\n&quot; +
+                    &quot;Bear in mind that you can still enjoy all features of the framework without using runners (they are completely optional).\n&quot; +
+                    &quot;If you get this error despite using JUnit 4.5 or higher then please report this error to the mockito mailing list.\n&quot;
+                    , t);
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

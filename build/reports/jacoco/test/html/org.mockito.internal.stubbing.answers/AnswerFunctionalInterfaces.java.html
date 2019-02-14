@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnswerFunctionalInterfaces.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.stubbing.answers</a> &gt; <span class="el_source">AnswerFunctionalInterfaces.java</span></div><h1>AnswerFunctionalInterfaces.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.stubbing.answers;
+
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+import org.mockito.stubbing.Answer1;
+import org.mockito.stubbing.Answer2;
+import org.mockito.stubbing.Answer3;
+import org.mockito.stubbing.Answer4;
+import org.mockito.stubbing.Answer5;
+import org.mockito.stubbing.VoidAnswer1;
+import org.mockito.stubbing.VoidAnswer2;
+import org.mockito.stubbing.VoidAnswer3;
+import org.mockito.stubbing.VoidAnswer4;
+import org.mockito.stubbing.VoidAnswer5;
+
+/**
+ * Functional interfaces to make it easy to implement answers in Java 8
+ *
+ * @since 2.1.0
+ */
+public class AnswerFunctionalInterfaces {
+	/**
+     * Hide constructor to avoid instantiation of class with only static methods
+     */
+    private AnswerFunctionalInterfaces() {
+    }
+
+    /**
+     * Construct an answer from a two parameter answer interface
+     * @param answer answer interface
+     * @param &lt;T&gt; return type
+     * @param &lt;A&gt; input parameter 1 type
+     * @return a new answer object
+     */
+    public static &lt;T, A&gt; Answer&lt;T&gt; toAnswer(final Answer1&lt;T, A&gt; answer) {
+<span class="fc" id="L40">        return new Answer&lt;T&gt;() {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+            public T answer(InvocationOnMock invocation) throws Throwable {
+<span class="fc" id="L43">                return answer.answer((A)invocation.getArgument(0));</span>
+            }
+        };
+    }
+
+    /**
+     * Construct an answer from a two parameter answer interface
+     * @param answer answer interface
+     * @param &lt;A&gt; input parameter 1 type
+     * @return a new answer object
+     */
+    public static &lt;A&gt; Answer&lt;Void&gt; toAnswer(final VoidAnswer1&lt;A&gt; answer) {
+<span class="fc" id="L55">        return new Answer&lt;Void&gt;() {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+            public Void answer(InvocationOnMock invocation) throws Throwable {
+<span class="fc" id="L58">                answer.answer((A)invocation.getArgument(0));</span>
+<span class="fc" id="L59">                return null;</span>
+            }
+        };
+    }
+
+    /**
+     * Construct an answer from a two parameter answer interface
+     * @param answer answer interface
+     * @param &lt;T&gt; return type
+     * @param &lt;A&gt; input parameter 1 type
+     * @param &lt;B&gt; input parameter 2 type
+     * @return a new answer object
+     */
+    public static &lt;T, A, B&gt; Answer&lt;T&gt; toAnswer(final Answer2&lt;T, A, B&gt; answer) {
+<span class="fc" id="L73">        return new Answer&lt;T&gt;() {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+            public T answer(InvocationOnMock invocation) throws Throwable {
+<span class="fc" id="L76">                return answer.answer(</span>
+<span class="fc" id="L77">                        (A)invocation.getArgument(0),</span>
+<span class="fc" id="L78">                        (B)invocation.getArgument(1));</span>
+            }
+        };
+    }
+
+    /**
+     * Construct an answer from a two parameter answer interface
+     * @param answer answer interface
+     * @param &lt;A&gt; input parameter 1 type
+     * @param &lt;B&gt; input parameter 2 type
+     * @return a new answer object
+     */
+    public static &lt;A, B&gt; Answer&lt;Void&gt; toAnswer(final VoidAnswer2&lt;A, B&gt; answer) {
+<span class="fc" id="L91">        return new Answer&lt;Void&gt;() {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+            public Void answer(InvocationOnMock invocation) throws Throwable {
+<span class="fc" id="L94">                answer.answer(</span>
+<span class="fc" id="L95">                        (A)invocation.getArgument(0),</span>
+<span class="fc" id="L96">                        (B)invocation.getArgument(1));</span>
+<span class="fc" id="L97">                return null;</span>
+            }
+        };
+    }
+
+    /**
+     * Construct an answer from a three parameter answer interface
+     * @param answer answer interface
+     * @param &lt;T&gt; return type
+     * @param &lt;A&gt; input parameter 1 type
+     * @param &lt;B&gt; input parameter 2 type
+     * @param &lt;C&gt; input parameter 3 type
+     * @return a new answer object
+     */
+    public static &lt;T, A, B, C&gt; Answer&lt;T&gt; toAnswer(final Answer3&lt;T, A, B, C&gt; answer) {
+<span class="fc" id="L112">        return new Answer&lt;T&gt;() {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+            public T answer(InvocationOnMock invocation) throws Throwable {
+<span class="fc" id="L115">                return answer.answer(</span>
+<span class="fc" id="L116">                        (A)invocation.getArgument(0),</span>
+<span class="fc" id="L117">                        (B)invocation.getArgument(1),</span>
+<span class="fc" id="L118">                        (C)invocation.getArgument(2));</span>
+            }
+        };
+    }
+
+    /**
+     * Construct an answer from a three parameter answer interface
+     * @param answer answer interface
+     * @param &lt;A&gt; input parameter 1 type
+     * @param &lt;B&gt; input parameter 2 type
+     * @param &lt;C&gt; input parameter 3 type
+     * @return a new answer object
+     */
+    public static &lt;A, B, C&gt; Answer&lt;Void&gt; toAnswer(final VoidAnswer3&lt;A, B, C&gt; answer) {
+<span class="fc" id="L132">        return new Answer&lt;Void&gt;() {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+            public Void answer(InvocationOnMock invocation) throws Throwable {
+<span class="fc" id="L135">                answer.answer(</span>
+<span class="fc" id="L136">                        (A)invocation.getArgument(0),</span>
+<span class="fc" id="L137">                        (B)invocation.getArgument(1),</span>
+<span class="fc" id="L138">                        (C)invocation.getArgument(2));</span>
+<span class="fc" id="L139">                return null;</span>
+            }
+        };
+    }
+
+    /**
+     * Construct an answer from a four parameter answer interface
+     * @param answer answer interface
+     * @param &lt;T&gt; return type
+     * @param &lt;A&gt; input parameter 1 type
+     * @param &lt;B&gt; input parameter 2 type
+     * @param &lt;C&gt; input parameter 3 type
+     * @param &lt;D&gt; input parameter 4 type
+     * @return a new answer object
+     */
+    public static &lt;T, A, B, C, D&gt; Answer&lt;T&gt; toAnswer(final Answer4&lt;T, A, B, C, D&gt; answer) {
+<span class="fc" id="L155">        return new Answer&lt;T&gt;() {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+            public T answer(InvocationOnMock invocation) throws Throwable {
+<span class="fc" id="L158">                return answer.answer(</span>
+<span class="fc" id="L159">                        (A)invocation.getArgument(0),</span>
+<span class="fc" id="L160">                        (B)invocation.getArgument(1),</span>
+<span class="fc" id="L161">                        (C)invocation.getArgument(2),</span>
+<span class="fc" id="L162">                        (D)invocation.getArgument(3));</span>
+            }
+        };
+    }
+
+    /**
+     * Construct an answer from a four parameter answer interface
+     * @param answer answer interface
+     * @param &lt;A&gt; input parameter 1 type
+     * @param &lt;B&gt; input parameter 2 type
+     * @param &lt;C&gt; input parameter 3 type
+     * @param &lt;D&gt; input parameter 4 type
+     * @return a new answer object
+     */
+    public static &lt;A, B, C, D&gt; Answer&lt;Void&gt; toAnswer(final VoidAnswer4&lt;A, B, C, D&gt; answer) {
+<span class="fc" id="L177">        return new Answer&lt;Void&gt;() {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+            public Void answer(InvocationOnMock invocation) throws Throwable {
+<span class="fc" id="L180">                answer.answer(</span>
+<span class="fc" id="L181">                        (A)invocation.getArgument(0),</span>
+<span class="fc" id="L182">                        (B)invocation.getArgument(1),</span>
+<span class="fc" id="L183">                        (C)invocation.getArgument(2),</span>
+<span class="fc" id="L184">                        (D)invocation.getArgument(3));</span>
+<span class="fc" id="L185">                return null;</span>
+            }
+        };
+    }
+
+    /**
+     * Construct an answer from a five parameter answer interface
+     * @param answer answer interface
+     * @param &lt;T&gt; return type
+     * @param &lt;A&gt; input parameter 1 type
+     * @param &lt;B&gt; input parameter 2 type
+     * @param &lt;C&gt; input parameter 3 type
+     * @param &lt;D&gt; input parameter 4 type
+     * @param &lt;E&gt; input parameter 5 type
+     * @return a new answer object
+     */
+    public static &lt;T, A, B, C, D, E&gt; Answer&lt;T&gt; toAnswer(final Answer5&lt;T, A, B, C, D, E&gt; answer) {
+<span class="fc" id="L202">        return new Answer&lt;T&gt;() {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+            public T answer(InvocationOnMock invocation) throws Throwable {
+<span class="fc" id="L205">                return answer.answer(</span>
+<span class="fc" id="L206">                        (A)invocation.getArgument(0),</span>
+<span class="fc" id="L207">                        (B)invocation.getArgument(1),</span>
+<span class="fc" id="L208">                        (C)invocation.getArgument(2),</span>
+<span class="fc" id="L209">                        (D)invocation.getArgument(3),</span>
+<span class="fc" id="L210">                        (E)invocation.getArgument(4));</span>
+            }
+        };
+    }
+
+    /**
+     * Construct an answer from a five parameter answer interface
+     * @param answer answer interface
+     * @param &lt;A&gt; input parameter 1 type
+     * @param &lt;B&gt; input parameter 2 type
+     * @param &lt;C&gt; input parameter 3 type
+     * @param &lt;D&gt; input parameter 4 type
+     * @param &lt;E&gt; input parameter 5 type
+     * @return a new answer object
+     */
+    public static &lt;A, B, C, D, E&gt; Answer&lt;Void&gt; toAnswer(final VoidAnswer5&lt;A, B, C, D, E&gt; answer) {
+<span class="fc" id="L226">        return new Answer&lt;Void&gt;() {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+            public Void answer(InvocationOnMock invocation) throws Throwable {
+<span class="fc" id="L229">                answer.answer(</span>
+<span class="fc" id="L230">                        (A)invocation.getArgument(0),</span>
+<span class="fc" id="L231">                        (B)invocation.getArgument(1),</span>
+<span class="fc" id="L232">                        (C)invocation.getArgument(2),</span>
+<span class="fc" id="L233">                        (D)invocation.getArgument(3),</span>
+<span class="fc" id="L234">                        (E)invocation.getArgument(4));</span>
+<span class="fc" id="L235">                return null;</span>
+            }
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

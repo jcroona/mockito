@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JavaEightUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.util</a> &gt; <span class="el_source">JavaEightUtil.java</span></div><h1>JavaEightUtil.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.util;
+
+import org.mockito.internal.creation.instance.InstantiationException;
+
+import java.lang.reflect.Method;
+
+/**
+ * Helper class to work with features that were introduced in Java versions after 1.5.
+ * This class uses reflection in most places to avoid coupling with a newer JDK.
+ */
+public final class JavaEightUtil {
+
+    // No need for volatile, these optionals are already safe singletons.
+    private static Object emptyOptional;
+    private static Object emptyOptionalDouble;
+    private static Object emptyOptionalInt;
+    private static Object emptyOptionalLong;
+
+    private JavaEightUtil() {
+        // utility class
+    }
+
+    /**
+     * Creates an empty Optional using reflection to stay backwards-compatible with older JDKs.
+     *
+     * @return an empty Optional.
+     */
+    public static Object emptyOptional() {
+        // no need for double-checked locking
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (emptyOptional != null) {</span>
+<span class="fc" id="L35">            return emptyOptional;</span>
+        }
+
+<span class="fc" id="L38">        return emptyOptional = invokeNullaryFactoryMethod(&quot;java.util.Optional&quot;, &quot;empty&quot;);</span>
+    }
+
+
+    /**
+     * Creates an empty OptionalDouble using reflection to stay backwards-compatible with older JDKs.
+     *
+     * @return an empty OptionalDouble.
+     */
+    public static Object emptyOptionalDouble() {
+        // no need for double-checked locking
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (emptyOptionalDouble != null) {</span>
+<span class="fc" id="L50">            return emptyOptionalDouble;</span>
+        }
+
+<span class="fc" id="L53">        return emptyOptionalDouble = invokeNullaryFactoryMethod(&quot;java.util.OptionalDouble&quot;, &quot;empty&quot;);</span>
+    }
+
+    /**
+     * Creates an empty OptionalInt using reflection to stay backwards-compatible with older JDKs.
+     *
+     * @return an empty OptionalInt.
+     */
+    public static Object emptyOptionalInt() {
+        // no need for double-checked locking
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if (emptyOptionalInt != null) {</span>
+<span class="fc" id="L64">            return emptyOptionalInt;</span>
+        }
+
+<span class="fc" id="L67">        return emptyOptionalInt = invokeNullaryFactoryMethod(&quot;java.util.OptionalInt&quot;, &quot;empty&quot;);</span>
+    }
+
+    /**
+     * Creates an empty OptionalLong using reflection to stay backwards-compatible with older JDKs.
+     *
+     * @return an empty OptionalLong.
+     */
+    public static Object emptyOptionalLong() {
+        // no need for double-checked locking
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (emptyOptionalLong != null) {</span>
+<span class="fc" id="L78">            return emptyOptionalLong;</span>
+        }
+
+<span class="fc" id="L81">        return emptyOptionalLong = invokeNullaryFactoryMethod(&quot;java.util.OptionalLong&quot;, &quot;empty&quot;);</span>
+    }
+
+    /**
+     * Creates an empty Stream using reflection to stay backwards-compatible with older JDKs.
+     *
+     * @return an empty Stream.
+     */
+    public static Object emptyStream() {
+        // note: the empty stream can not be stored as a singleton.
+<span class="fc" id="L91">        return invokeNullaryFactoryMethod(&quot;java.util.stream.Stream&quot;, &quot;empty&quot;);</span>
+    }
+
+    /**
+     * Creates an empty DoubleStream using reflection to stay backwards-compatible with older JDKs.
+     *
+     * @return an empty DoubleStream.
+     */
+    public static Object emptyDoubleStream() {
+        // note: the empty stream can not be stored as a singleton.
+<span class="fc" id="L101">        return invokeNullaryFactoryMethod(&quot;java.util.stream.DoubleStream&quot;, &quot;empty&quot;);</span>
+    }
+
+    /**
+     * Creates an empty IntStream using reflection to stay backwards-compatible with older JDKs.
+     *
+     * @return an empty IntStream.
+     */
+    public static Object emptyIntStream() {
+        // note: the empty stream can not be stored as a singleton.
+<span class="fc" id="L111">        return invokeNullaryFactoryMethod(&quot;java.util.stream.IntStream&quot;, &quot;empty&quot;);</span>
+    }
+
+    /**
+     * Creates an empty LongStream using reflection to stay backwards-compatible with older JDKs.
+     *
+     * @return an empty LongStream.
+     */
+    public static Object emptyLongStream() {
+        // note: the empty stream can not be stored as a singleton.
+<span class="fc" id="L121">        return invokeNullaryFactoryMethod(&quot;java.util.stream.LongStream&quot;, &quot;empty&quot;);</span>
+    }
+
+    /**
+     * Invokes a nullary static factory method using reflection to stay backwards-compatible with older JDKs.
+     *
+     * @param fqcn The fully qualified class name of the type to be produced.
+     * @param methodName The name of the factory method.
+     * @return the object produced.
+     */
+    private static Object invokeNullaryFactoryMethod(final String fqcn, final String methodName) {
+        try {
+<span class="fc" id="L133">            final Class&lt;?&gt; type = Class.forName(fqcn);</span>
+<span class="fc" id="L134">            final Method method = type.getMethod(methodName);</span>
+
+<span class="fc" id="L136">            return method.invoke(null);</span>
+            // any exception is really unexpected since the type name has
+            // already been verified
+<span class="nc" id="L139">        } catch (final Exception e) {</span>
+<span class="nc" id="L140">            throw new InstantiationException(</span>
+<span class="nc" id="L141">                    String.format(&quot;Could not create %s#%s(): %s&quot;, fqcn, methodName, e), e);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CreationSettings.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.creation.settings</a> &gt; <span class="el_source">CreationSettings.java</span></div><h1>CreationSettings.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2007 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.creation.settings;
+
+import org.mockito.internal.listeners.StubbingLookupListener;
+import org.mockito.listeners.InvocationListener;
+import org.mockito.listeners.VerificationStartedListener;
+import org.mockito.mock.MockCreationSettings;
+import org.mockito.mock.MockName;
+import org.mockito.mock.SerializableMode;
+import org.mockito.stubbing.Answer;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+
+public class CreationSettings&lt;T&gt; implements MockCreationSettings&lt;T&gt;, Serializable {
+    private static final long serialVersionUID = -6789800638070123629L;
+
+    protected Class&lt;T&gt; typeToMock;
+<span class="fc" id="L26">    protected Set&lt;Class&lt;?&gt;&gt; extraInterfaces = new LinkedHashSet&lt;Class&lt;?&gt;&gt;();</span>
+    protected String name;
+    protected Object spiedInstance;
+    protected Answer&lt;Object&gt; defaultAnswer;
+    protected MockName mockName;
+<span class="fc" id="L31">    protected SerializableMode serializableMode = SerializableMode.NONE;</span>
+<span class="fc" id="L32">    protected List&lt;InvocationListener&gt; invocationListeners = new ArrayList&lt;InvocationListener&gt;();</span>
+<span class="fc" id="L33">    protected final List&lt;StubbingLookupListener&gt; stubbingLookupListeners = new ArrayList&lt;StubbingLookupListener&gt;();</span>
+<span class="fc" id="L34">    protected List&lt;VerificationStartedListener&gt; verificationStartedListeners = new LinkedList&lt;VerificationStartedListener&gt;();</span>
+    protected boolean stubOnly;
+    protected boolean stripAnnotations;
+    private boolean useConstructor;
+    private Object outerClassInstance;
+    private Object[] constructorArgs;
+    protected boolean lenient;
+
+<span class="fc" id="L42">    public CreationSettings() {}</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L45">    public CreationSettings(CreationSettings copy) {</span>
+<span class="fc" id="L46">        this.typeToMock = copy.typeToMock;</span>
+<span class="fc" id="L47">        this.extraInterfaces = copy.extraInterfaces;</span>
+<span class="fc" id="L48">        this.name = copy.name;</span>
+<span class="fc" id="L49">        this.spiedInstance = copy.spiedInstance;</span>
+<span class="fc" id="L50">        this.defaultAnswer = copy.defaultAnswer;</span>
+<span class="fc" id="L51">        this.mockName = copy.mockName;</span>
+<span class="fc" id="L52">        this.serializableMode = copy.serializableMode;</span>
+<span class="fc" id="L53">        this.invocationListeners = copy.invocationListeners;</span>
+<span class="fc" id="L54">        this.verificationStartedListeners = copy.verificationStartedListeners;</span>
+<span class="fc" id="L55">        this.stubOnly = copy.stubOnly;</span>
+<span class="fc" id="L56">        this.useConstructor = copy.isUsingConstructor();</span>
+<span class="fc" id="L57">        this.outerClassInstance = copy.getOuterClassInstance();</span>
+<span class="fc" id="L58">        this.constructorArgs = copy.getConstructorArgs();</span>
+<span class="fc" id="L59">        this.lenient = copy.lenient;</span>
+<span class="fc" id="L60">        this.stripAnnotations = copy.stripAnnotations;</span>
+<span class="fc" id="L61">    }</span>
+
+    @Override
+    public Class&lt;T&gt; getTypeToMock() {
+<span class="fc" id="L65">        return typeToMock;</span>
+    }
+
+    public CreationSettings&lt;T&gt; setTypeToMock(Class&lt;T&gt; typeToMock) {
+<span class="fc" id="L69">        this.typeToMock = typeToMock;</span>
+<span class="fc" id="L70">        return this;</span>
+    }
+
+    @Override
+    public Set&lt;Class&lt;?&gt;&gt; getExtraInterfaces() {
+<span class="fc" id="L75">        return extraInterfaces;</span>
+    }
+
+    public CreationSettings&lt;T&gt; setExtraInterfaces(Set&lt;Class&lt;?&gt;&gt; extraInterfaces) {
+<span class="fc" id="L79">        this.extraInterfaces = extraInterfaces;</span>
+<span class="fc" id="L80">        return this;</span>
+    }
+
+    public String getName() {
+<span class="fc" id="L84">        return name;</span>
+    }
+
+    @Override
+    public Object getSpiedInstance() {
+<span class="fc" id="L89">        return spiedInstance;</span>
+    }
+
+    @Override
+    public Answer&lt;Object&gt; getDefaultAnswer() {
+<span class="fc" id="L94">        return defaultAnswer;</span>
+    }
+
+    @Override
+    public MockName getMockName() {
+<span class="fc" id="L99">        return mockName;</span>
+    }
+
+    public CreationSettings&lt;T&gt; setMockName(MockName mockName) {
+<span class="fc" id="L103">        this.mockName = mockName;</span>
+<span class="fc" id="L104">        return this;</span>
+    }
+
+    public boolean isSerializable() {
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        return serializableMode != SerializableMode.NONE;</span>
+    }
+
+    public CreationSettings&lt;T&gt; setSerializableMode(SerializableMode serializableMode) {
+<span class="fc" id="L112">        this.serializableMode = serializableMode;</span>
+<span class="fc" id="L113">        return this;</span>
+    }
+
+    @Override
+    public SerializableMode getSerializableMode() {
+<span class="fc" id="L118">        return serializableMode;</span>
+    }
+
+    @Override
+    public List&lt;InvocationListener&gt; getInvocationListeners() {
+<span class="fc" id="L123">        return invocationListeners;</span>
+    }
+
+    @Override
+    public List&lt;VerificationStartedListener&gt; getVerificationStartedListeners() {
+<span class="fc" id="L128">        return verificationStartedListeners;</span>
+    }
+
+    public List&lt;StubbingLookupListener&gt; getStubbingLookupListeners() {
+<span class="fc" id="L132">        return stubbingLookupListeners;</span>
+    }
+
+    @Override
+    public boolean isUsingConstructor() {
+<span class="fc" id="L137">        return useConstructor;</span>
+    }
+
+    @Override
+    public boolean isStripAnnotations() {
+<span class="fc" id="L142">        return stripAnnotations;</span>
+    }
+
+    @Override
+    public Object[] getConstructorArgs() {
+<span class="fc" id="L147">        return constructorArgs;</span>
+    }
+
+    @Override
+    public Object getOuterClassInstance() {
+<span class="fc" id="L152">        return outerClassInstance;</span>
+    }
+
+    @Override
+    public boolean isStubOnly() {
+<span class="fc" id="L157">        return stubOnly;</span>
+    }
+
+    @Override
+    public boolean isLenient() {
+<span class="fc" id="L162">        return lenient;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

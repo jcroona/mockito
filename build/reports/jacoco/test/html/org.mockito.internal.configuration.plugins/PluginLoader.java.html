@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PluginLoader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.configuration.plugins</a> &gt; <span class="el_source">PluginLoader.java</span></div><h1>PluginLoader.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.configuration.plugins;
+
+import org.mockito.plugins.PluginSwitch;
+
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+
+class PluginLoader {
+
+    private final DefaultMockitoPlugins plugins;
+    private final PluginInitializer initializer;
+
+<span class="fc" id="L18">    PluginLoader(DefaultMockitoPlugins plugins, PluginInitializer initializer) {</span>
+<span class="fc" id="L19">        this.plugins = plugins;</span>
+<span class="fc" id="L20">        this.initializer = initializer;</span>
+<span class="fc" id="L21">    }</span>
+
+    PluginLoader(PluginSwitch pluginSwitch) {
+<span class="fc" id="L24">        this(new DefaultMockitoPlugins(), new PluginInitializer(pluginSwitch, null, new DefaultMockitoPlugins()));</span>
+<span class="fc" id="L25">    }</span>
+
+    /**
+     * @deprecated Let's avoid adding more aliases. It complicates the API.
+     * Instead of an alias, we can use fully qualified class name of the alternative implementation.
+     * &lt;p&gt;
+     * Adds an alias for a class name to this plugin loader. Instead of the fully qualified type name,
+     * the alias can be used as a convenience name for a known plugin.
+     */
+    @Deprecated
+    PluginLoader(PluginSwitch pluginSwitch, String alias) {
+<span class="fc" id="L36">        this(new DefaultMockitoPlugins(), new PluginInitializer(pluginSwitch, alias, new DefaultMockitoPlugins()));</span>
+<span class="fc" id="L37">    }</span>
+
+    /**
+     * Scans the classpath for given pluginType. If not found, default class is used.
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    &lt;T&gt; T loadPlugin(final Class&lt;T&gt; pluginType) {
+<span class="fc" id="L44">        return (T) loadPlugin(pluginType, null);</span>
+    }
+
+    /**
+     * Scans the classpath for given {@code preferredPluginType}. If not found scan for {@code
+     * alternatePluginType}. If neither a preferred or alternate plugin is found, default to default
+     * class of {@code preferredPluginType}.
+     *
+     * @return An object of either {@code preferredPluginType} or {@code alternatePluginType}
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    &lt;PreferredType, AlternateType&gt; Object loadPlugin(final Class&lt;PreferredType&gt; preferredPluginType, final Class&lt;AlternateType&gt; alternatePluginType) {
+        try {
+<span class="fc" id="L57">            PreferredType preferredPlugin = initializer.loadImpl(preferredPluginType);</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">            if (preferredPlugin != null) {</span>
+<span class="fc" id="L59">                return preferredPlugin;</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">            } else if (alternatePluginType != null) {</span>
+<span class="fc" id="L61">                AlternateType alternatePlugin = initializer.loadImpl(alternatePluginType);</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">                if (alternatePlugin != null) {</span>
+<span class="fc" id="L63">                    return alternatePlugin;</span>
+                }
+            }
+
+<span class="fc" id="L67">            return plugins.getDefaultPlugin(preferredPluginType);</span>
+<span class="fc" id="L68">        } catch (final Throwable t) {</span>
+<span class="fc" id="L69">            return Proxy.newProxyInstance(preferredPluginType.getClassLoader(),</span>
+                new Class&lt;?&gt;[]{preferredPluginType},
+<span class="fc" id="L71">                new InvocationHandler() {</span>
+                    @Override
+                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+<span class="fc" id="L74">                        throw new IllegalStateException(&quot;Could not initialize plugin: &quot; + preferredPluginType + &quot; (alternate: &quot; + alternatePluginType + &quot;)&quot;, t);</span>
+                    }
+                });
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

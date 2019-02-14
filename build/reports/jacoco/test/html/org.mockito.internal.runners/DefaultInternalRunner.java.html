@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefaultInternalRunner.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.runners</a> &gt; <span class="el_source">DefaultInternalRunner.java</span></div><h1>DefaultInternalRunner.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.runners;
+
+import org.junit.runner.Description;
+import org.junit.runner.manipulation.Filter;
+import org.junit.runner.manipulation.NoTestsRemainException;
+import org.junit.runner.notification.Failure;
+import org.junit.runner.notification.RunListener;
+import org.junit.runner.notification.RunNotifier;
+import org.junit.runners.BlockJUnit4ClassRunner;
+import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.InitializationError;
+import org.junit.runners.model.Statement;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.internal.junit.DefaultTestFinishedEvent;
+import org.mockito.internal.junit.MockitoTestListener;
+import org.mockito.internal.util.Supplier;
+
+public class DefaultInternalRunner implements InternalRunner {
+
+    private final BlockJUnit4ClassRunner runner;
+
+<span class="fc" id="L27">    public DefaultInternalRunner(Class&lt;?&gt; testClass, final Supplier&lt;MockitoTestListener&gt; listenerSupplier) throws InitializationError {</span>
+<span class="fc" id="L28">        runner = new BlockJUnit4ClassRunner(testClass) {</span>
+
+            public Object target;
+            private MockitoTestListener mockitoTestListener;
+
+            protected Statement withBefores(FrameworkMethod method, Object target, Statement statement) {
+<span class="fc" id="L34">                this.target = target;</span>
+                // get new test listener and add it to the framework
+<span class="fc" id="L36">                mockitoTestListener = listenerSupplier.get();</span>
+<span class="fc" id="L37">                Mockito.framework().addListener(mockitoTestListener);</span>
+                // init annotated mocks before tests
+<span class="fc" id="L39">                MockitoAnnotations.initMocks(target);</span>
+<span class="fc" id="L40">                return super.withBefores(method, target, statement);</span>
+            }
+
+            public void run(final RunNotifier notifier) {
+<span class="fc" id="L44">                RunListener listener = new RunListener() {</span>
+                    private boolean started;
+                    Throwable failure;
+
+                    @Override
+                    public void testStarted(Description description) throws Exception {
+<span class="fc" id="L50">                        started = true;</span>
+<span class="fc" id="L51">                    }</span>
+
+                    @Override
+                    public void testFailure(Failure failure) throws Exception {
+<span class="fc" id="L55">                        this.failure = failure.getException();</span>
+                        // If the test fails during the setup, `testFinished` is never invoked
+                        // Therefore, if we have not started, cleanup the testlistener
+<span class="pc bpc" id="L58" title="1 of 4 branches missed.">                        if (!started &amp;&amp; mockitoTestListener != null) {</span>
+<span class="fc" id="L59">                            Mockito.framework().removeListener(mockitoTestListener);</span>
+                        }
+<span class="fc" id="L61">                    }</span>
+
+                    @Override
+                    public void testFinished(Description description) throws Exception {
+                        try {
+<span class="fc bfc" id="L66" title="All 2 branches covered.">                            if (mockitoTestListener != null) {</span>
+<span class="fc" id="L67">                                Mockito.framework().removeListener(mockitoTestListener);</span>
+<span class="fc" id="L68">                                mockitoTestListener.testFinished(new DefaultTestFinishedEvent(target, description.getMethodName(), failure));</span>
+                            }
+<span class="fc" id="L70">                            Mockito.validateMockitoUsage();</span>
+<span class="fc" id="L71">                        } catch (Throwable t) {</span>
+                            //In order to produce clean exception to the user we need to fire test failure with the right description
+                            //Otherwise JUnit framework will report failure with some generic test name
+<span class="fc" id="L74">                            notifier.fireTestFailure(new Failure(description, t));</span>
+<span class="fc" id="L75">                        }</span>
+<span class="fc" id="L76">                    }</span>
+                };
+<span class="fc" id="L78">                notifier.addListener(listener);</span>
+<span class="fc" id="L79">                super.run(notifier);</span>
+<span class="fc" id="L80">            }</span>
+        };
+<span class="fc" id="L82">    }</span>
+
+    public void run(final RunNotifier notifier) {
+<span class="fc" id="L85">        runner.run(notifier);</span>
+<span class="fc" id="L86">    }</span>
+
+    public Description getDescription() {
+<span class="fc" id="L89">        return runner.getDescription();</span>
+    }
+
+    public void filter(Filter filter) throws NoTestsRemainException {
+<span class="fc" id="L93">        runner.filter(filter);</span>
+<span class="fc" id="L94">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

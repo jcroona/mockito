@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InlineByteBuddyMockMaker.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.creation.bytebuddy</a> &gt; <span class="el_source">InlineByteBuddyMockMaker.java</span></div><h1>InlineByteBuddyMockMaker.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.creation.bytebuddy;
+
+import net.bytebuddy.agent.ByteBuddyAgent;
+import org.mockito.Incubating;
+import org.mockito.exceptions.base.MockitoException;
+import org.mockito.exceptions.base.MockitoInitializationException;
+import org.mockito.internal.configuration.plugins.Plugins;
+import org.mockito.creation.instance.Instantiator;
+import org.mockito.internal.util.Platform;
+import org.mockito.internal.util.concurrent.WeakConcurrentMap;
+import org.mockito.invocation.MockHandler;
+import org.mockito.mock.MockCreationSettings;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.instrument.Instrumentation;
+import java.lang.reflect.Modifier;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
+
+import javax.tools.ToolProvider;
+
+import static org.mockito.internal.creation.bytebuddy.InlineBytecodeGenerator.EXCLUDES;
+import static org.mockito.internal.util.StringUtil.join;
+
+/**
+ * Agent and subclass based mock maker.
+ * &lt;p&gt;
+ * This mock maker which uses a combination of the Java instrumentation API and sub-classing rather than creating
+ * a new sub-class to create a mock. This way, it becomes possible to mock final types and methods. This mock
+ * maker &lt;strong&gt;must to be activated explicitly&lt;/strong&gt; for supporting mocking final types and methods:
+ * &lt;p&gt;
+ * &lt;p&gt;
+ * This mock maker can be activated by creating the file &lt;code&gt;/mockito-extensions/org.mockito.plugins.MockMaker&lt;/code&gt;
+ * containing the text &lt;code&gt;mock-maker-inline&lt;/code&gt; or &lt;code&gt;org.mockito.internal.creation.bytebuddy.InlineByteBuddyMockMaker&lt;/code&gt;.
+ * &lt;p&gt;
+ * &lt;p&gt;
+ * This mock maker will make a best effort to avoid subclass creation when creating a mock. Otherwise it will use the
+ * &lt;code&gt;org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker&lt;/code&gt; to create the mock class. That means
+ * that the following condition is true
+ * &lt;p&gt;
+ * &lt;pre class=&quot;code&quot;&gt;&lt;code class=&quot;java&quot;&gt;
+ * class Foo { }
+ * assert mock(Foo.class).getClass() == Foo.class;
+ * &lt;/pre&gt;&lt;/code&gt;
+ * &lt;p&gt;
+ * unless any of the following conditions is met, in such case the mock maker &lt;em&gt;fall backs&lt;/em&gt; to the
+ * the creation of a subclass.
+ * &lt;p&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;the type to mock is an abstract class.&lt;/li&gt;
+ * &lt;li&gt;the mock is set to require additional interfaces.&lt;/li&gt;
+ * &lt;li&gt;the mock is &lt;a href=&quot;#20&quot;&gt;explicitly set to support serialization&lt;/a&gt;.&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;p&gt;
+ * &lt;p&gt;
+ * Some type of the JDK cannot be mocked, this includes &lt;code&gt;Class&lt;/code&gt;, &lt;code&gt;String&lt;/code&gt;, and wrapper types.
+ * &lt;p&gt;
+ * &lt;p&gt;
+ * Nevertheless, final methods of such types are mocked when using the inlining mock maker. Mocking final types and enums
+ * does however remain impossible when explicitly requiring serialization support or when adding ancillary interfaces.
+ * &lt;p&gt;
+ * &lt;p&gt;
+ * Important behavioral changes when using inline-mocks:
+ * &lt;ul&gt;
+ * &lt;li&gt;Mockito is capable of mocking package-private methods even if they are defined in different packages than
+ * the mocked type. Mockito voluntarily never mocks package-visible methods within &lt;code&gt;java.*&lt;/code&gt; packages.&lt;/li&gt;
+ * &lt;li&gt;Additionally to final types, Mockito can now mock types that are not visible for extension; such types
+ * include private types in a protected package.&lt;/li&gt;
+ * &lt;li&gt;Mockito can no longer mock &lt;code&gt;native&lt;/code&gt; methods. Inline mocks require byte code manipulation of a
+ * method where native methods do not offer any byte code to manipulate.&lt;/li&gt;
+ * &lt;li&gt;Mockito cannot longer strip &lt;code&gt;synchronized&lt;/code&gt; modifiers from mocked instances.&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;p&gt;
+ * &lt;p&gt;
+ * Note that inline mocks require a Java agent to be attached. Mockito will attempt an attachment of a Java agent upon
+ * loading the mock maker for creating inline mocks. Such runtime attachment is only possible when using a JVM that
+ * is part of a JDK or when using a Java 9 VM. When running on a non-JDK VM prior to Java 9, it is however possible to
+ * manually add the &lt;a href=&quot;http://bytebuddy.net&quot;&gt;Byte Buddy Java agent jar&lt;/a&gt; using the &lt;code&gt;-javaagent&lt;/code&gt;
+ * parameter upon starting the JVM. Furthermore, the inlining mock maker requires the VM to support class retransformation
+ * (also known as HotSwap). All major VM distributions such as HotSpot (OpenJDK), J9 (IBM/Websphere) or Zing (Azul)
+ * support this feature.
+ */
+@Incubating
+public class InlineByteBuddyMockMaker implements ClassCreatingMockMaker {
+
+    private static final Instrumentation INSTRUMENTATION;
+
+    private static final Throwable INITIALIZATION_ERROR;
+
+    static {
+        Instrumentation instrumentation;
+<span class="fc" id="L100">        Throwable initializationError = null;</span>
+        try {
+            try {
+<span class="fc" id="L103">                instrumentation = ByteBuddyAgent.install();</span>
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">                if (!instrumentation.isRetransformClassesSupported()) {</span>
+<span class="nc" id="L105">                    throw new IllegalStateException(join(</span>
+                            &quot;Byte Buddy requires retransformation for creating inline mocks. This feature is unavailable on the current VM.&quot;,
+                            &quot;&quot;,
+                            &quot;You cannot use this mock maker on this VM&quot;));
+                }
+<span class="fc" id="L110">                File boot = File.createTempFile(&quot;mockitoboot&quot;, &quot;.jar&quot;);</span>
+<span class="fc" id="L111">                boot.deleteOnExit();</span>
+<span class="fc" id="L112">                JarOutputStream outputStream = new JarOutputStream(new FileOutputStream(boot));</span>
+                try {
+<span class="fc" id="L114">                    String source = &quot;org/mockito/internal/creation/bytebuddy/inject/MockMethodDispatcher&quot;;</span>
+<span class="fc" id="L115">                    InputStream inputStream = InlineByteBuddyMockMaker.class.getClassLoader().getResourceAsStream(source + &quot;.raw&quot;);</span>
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">                    if (inputStream == null) {</span>
+<span class="nc" id="L117">                        throw new IllegalStateException(join(</span>
+                                &quot;The MockMethodDispatcher class file is not locatable: &quot; + source + &quot;.raw&quot;,
+                                &quot;&quot;,
+<span class="nc" id="L120">                                &quot;The class loader responsible for looking up the resource: &quot; + InlineByteBuddyMockMaker.class.getClassLoader()</span>
+                        ));
+                    }
+<span class="fc" id="L123">                    outputStream.putNextEntry(new JarEntry(source + &quot;.class&quot;));</span>
+                    try {
+                        int length;
+<span class="fc" id="L126">                        byte[] buffer = new byte[1024];</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">                        while ((length = inputStream.read(buffer)) != -1) {</span>
+<span class="fc" id="L128">                            outputStream.write(buffer, 0, length);</span>
+                        }
+                    } finally {
+<span class="fc" id="L131">                        inputStream.close();</span>
+                    }
+<span class="fc" id="L133">                    outputStream.closeEntry();</span>
+                } finally {
+<span class="fc" id="L135">                    outputStream.close();</span>
+                }
+<span class="fc" id="L137">                instrumentation.appendToBootstrapClassLoaderSearch(new JarFile(boot));</span>
+                try {
+<span class="fc" id="L139">                    Class.forName(&quot;org.mockito.internal.creation.bytebuddy.inject.MockMethodDispatcher&quot;, false, null);</span>
+<span class="nc" id="L140">                } catch (ClassNotFoundException cnfe) {</span>
+<span class="nc" id="L141">                    throw new IllegalStateException(join(</span>
+                            &quot;Mockito failed to inject the MockMethodDispatcher class into the bootstrap class loader&quot;,
+                            &quot;&quot;,
+                            &quot;It seems like your current VM does not support the instrumentation API correctly.&quot;), cnfe);
+<span class="fc" id="L145">                }</span>
+<span class="nc" id="L146">            } catch (IOException ioe) {</span>
+<span class="nc" id="L147">                throw new IllegalStateException(join(</span>
+                        &quot;Mockito could not self-attach a Java agent to the current VM. This feature is required for inline mocking.&quot;,
+                        &quot;This error occured due to an I/O error during the creation of this agent: &quot; + ioe,
+                        &quot;&quot;,
+                        &quot;Potentially, the current VM does not support the instrumentation API correctly&quot;), ioe);
+<span class="fc" id="L152">            }</span>
+<span class="nc" id="L153">        } catch (Throwable throwable) {</span>
+<span class="nc" id="L154">            instrumentation = null;</span>
+<span class="nc" id="L155">            initializationError = throwable;</span>
+<span class="fc" id="L156">        }</span>
+<span class="fc" id="L157">        INSTRUMENTATION = instrumentation;</span>
+<span class="fc" id="L158">        INITIALIZATION_ERROR = initializationError;</span>
+<span class="fc" id="L159">    }</span>
+
+    private final BytecodeGenerator bytecodeGenerator;
+
+<span class="fc" id="L163">    private final WeakConcurrentMap&lt;Object, MockMethodInterceptor&gt; mocks = new WeakConcurrentMap.WithInlinedExpunction&lt;Object, MockMethodInterceptor&gt;();</span>
+
+<span class="fc" id="L165">    public InlineByteBuddyMockMaker() {</span>
+<span class="pc bpc" id="L166" title="1 of 2 branches missed.">        if (INITIALIZATION_ERROR != null) {</span>
+<span class="nc" id="L167">            throw new MockitoInitializationException(join(</span>
+                    &quot;Could not initialize inline Byte Buddy mock maker. (This mock maker is not supported on Android.)&quot;,
+<span class="nc bnc" id="L169" title="All 2 branches missed.">                    ToolProvider.getSystemJavaCompiler() == null ? &quot;Are you running a JRE instead of a JDK? The inline mock maker needs to be run on a JDK.\n&quot; : &quot;&quot;,</span>
+<span class="nc" id="L170">                    Platform.describe()), INITIALIZATION_ERROR);</span>
+        }
+<span class="fc" id="L172">        bytecodeGenerator = new TypeCachingBytecodeGenerator(new InlineBytecodeGenerator(INSTRUMENTATION, mocks), true);</span>
+<span class="fc" id="L173">    }</span>
+
+    @Override
+    public &lt;T&gt; T createMock(MockCreationSettings&lt;T&gt; settings, MockHandler handler) {
+<span class="fc" id="L177">        Class&lt;? extends T&gt; type = createMockType(settings);</span>
+
+<span class="fc" id="L179">        Instantiator instantiator = Plugins.getInstantiatorProvider().getInstantiator(settings);</span>
+        try {
+<span class="fc" id="L181">            T instance = instantiator.newInstance(type);</span>
+<span class="fc" id="L182">            MockMethodInterceptor mockMethodInterceptor = new MockMethodInterceptor(handler, settings);</span>
+<span class="fc" id="L183">            mocks.put(instance, mockMethodInterceptor);</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">            if (instance instanceof MockAccess) {</span>
+<span class="fc" id="L185">                ((MockAccess) instance).setMockitoInterceptor(mockMethodInterceptor);</span>
+            }
+<span class="fc" id="L187">            return instance;</span>
+<span class="nc" id="L188">        } catch (org.mockito.creation.instance.InstantiationException e) {</span>
+<span class="nc" id="L189">            throw new MockitoException(&quot;Unable to create mock instance of type '&quot; + type.getSimpleName() + &quot;'&quot;, e);</span>
+        }
+    }
+
+    @Override
+    public &lt;T&gt; Class&lt;? extends T&gt; createMockType(MockCreationSettings&lt;T&gt; settings) {
+        try {
+<span class="fc" id="L196">            return bytecodeGenerator.mockClass(MockFeatures.withMockFeatures(</span>
+<span class="fc" id="L197">                    settings.getTypeToMock(),</span>
+<span class="fc" id="L198">                    settings.getExtraInterfaces(),</span>
+<span class="fc" id="L199">                    settings.getSerializableMode(),</span>
+<span class="fc" id="L200">                    settings.isStripAnnotations()</span>
+            ));
+<span class="fc" id="L202">        } catch (Exception bytecodeGenerationFailed) {</span>
+<span class="nc" id="L203">            throw prettifyFailure(settings, bytecodeGenerationFailed);</span>
+        }
+    }
+
+    private &lt;T&gt; RuntimeException prettifyFailure(MockCreationSettings&lt;T&gt; mockFeatures, Exception generationFailed) {
+<span class="fc bfc" id="L208" title="All 2 branches covered.">        if (mockFeatures.getTypeToMock().isArray()) {</span>
+<span class="fc" id="L209">            throw new MockitoException(join(</span>
+<span class="fc" id="L210">                    &quot;Arrays cannot be mocked: &quot; + mockFeatures.getTypeToMock() + &quot;.&quot;,</span>
+                    &quot;&quot;
+            ), generationFailed);
+        }
+<span class="pc bpc" id="L214" title="1 of 2 branches missed.">        if (Modifier.isFinal(mockFeatures.getTypeToMock().getModifiers())) {</span>
+<span class="fc" id="L215">            throw new MockitoException(join(</span>
+<span class="fc" id="L216">                    &quot;Mockito cannot mock this class: &quot; + mockFeatures.getTypeToMock() + &quot;.&quot;,</span>
+                    &quot;Can not mock final classes with the following settings :&quot;,
+                    &quot; - explicit serialization (e.g. withSettings().serializable())&quot;,
+                    &quot; - extra interfaces (e.g. withSettings().extraInterfaces(...))&quot;,
+                    &quot;&quot;,
+                    &quot;You are seeing this disclaimer because Mockito is configured to create inlined mocks.&quot;,
+                    &quot;You can learn about inline mocks and their limitations under item #39 of the Mockito class javadoc.&quot;,
+                    &quot;&quot;,
+                    &quot;Underlying exception : &quot; + generationFailed
+            ), generationFailed);
+        }
+<span class="nc bnc" id="L227" title="All 2 branches missed.">        if (Modifier.isPrivate(mockFeatures.getTypeToMock().getModifiers())) {</span>
+<span class="nc" id="L228">            throw new MockitoException(join(</span>
+<span class="nc" id="L229">                    &quot;Mockito cannot mock this class: &quot; + mockFeatures.getTypeToMock() + &quot;.&quot;,</span>
+                    &quot;Most likely it is a private class that is not visible by Mockito&quot;,
+                    &quot;&quot;,
+                    &quot;You are seeing this disclaimer because Mockito is configured to create inlined mocks.&quot;,
+                    &quot;You can learn about inline mocks and their limitations under item #39 of the Mockito class javadoc.&quot;,
+                    &quot;&quot;
+            ), generationFailed);
+        }
+<span class="nc" id="L237">        throw new MockitoException(join(</span>
+<span class="nc" id="L238">                &quot;Mockito cannot mock this class: &quot; + mockFeatures.getTypeToMock() + &quot;.&quot;,</span>
+                &quot;&quot;,
+                &quot;If you're not sure why you're getting this error, please report to the mailing list.&quot;,
+                &quot;&quot;,
+<span class="nc" id="L242">                Platform.warnForVM(</span>
+                        &quot;IBM J9 VM&quot;, &quot;Early IBM virtual machine are known to have issues with Mockito, please upgrade to an up-to-date version.\n&quot;,
+<span class="nc bnc" id="L244" title="All 2 branches missed.">                        &quot;Hotspot&quot;, Platform.isJava8BelowUpdate45() ? &quot;Java 8 early builds have bugs that were addressed in Java 1.8.0_45, please update your JDK!\n&quot; : &quot;&quot;</span>
+                ),
+<span class="nc" id="L246">                Platform.describe(),</span>
+                &quot;&quot;,
+                &quot;You are seeing this disclaimer because Mockito is configured to create inlined mocks.&quot;,
+                &quot;You can learn about inline mocks and their limitations under item #39 of the Mockito class javadoc.&quot;,
+                &quot;&quot;,
+                &quot;Underlying exception : &quot; + generationFailed
+        ), generationFailed);
+    }
+
+    @Override
+    public MockHandler getHandler(Object mock) {
+<span class="fc" id="L257">        MockMethodInterceptor interceptor = mocks.get(mock);</span>
+<span class="pc bpc" id="L258" title="1 of 2 branches missed.">        if (interceptor == null) {</span>
+<span class="nc" id="L259">            return null;</span>
+        } else {
+<span class="fc" id="L261">            return interceptor.handler;</span>
+        }
+    }
+
+    @Override
+    public void resetMock(Object mock, MockHandler newHandler, MockCreationSettings settings) {
+<span class="fc" id="L267">        MockMethodInterceptor mockMethodInterceptor = new MockMethodInterceptor(newHandler, settings);</span>
+<span class="fc" id="L268">        mocks.put(mock, mockMethodInterceptor);</span>
+<span class="pc bpc" id="L269" title="1 of 2 branches missed.">        if (mock instanceof MockAccess) {</span>
+<span class="nc" id="L270">            ((MockAccess) mock).setMockitoInterceptor(mockMethodInterceptor);</span>
+        }
+<span class="fc" id="L272">    }</span>
+
+    @Override
+    public TypeMockability isTypeMockable(final Class&lt;?&gt; type) {
+<span class="fc" id="L276">        return new TypeMockability() {</span>
+            @Override
+            public boolean mockable() {
+<span class="fc bfc" id="L279" title="All 4 branches covered.">                return INSTRUMENTATION.isModifiableClass(type) &amp;&amp; !EXCLUDES.contains(type);</span>
+            }
+
+            @Override
+            public String nonMockableReason() {
+<span class="fc bfc" id="L284" title="All 2 branches covered.">                if (mockable()) {</span>
+<span class="fc" id="L285">                    return &quot;&quot;;</span>
+                }
+<span class="fc bfc" id="L287" title="All 2 branches covered.">                if (type.isPrimitive()) {</span>
+<span class="fc" id="L288">                    return &quot;primitive type&quot;;</span>
+                }
+<span class="fc bfc" id="L290" title="All 2 branches covered.">                if (EXCLUDES.contains(type)) {</span>
+<span class="fc" id="L291">                    return &quot;Cannot mock wrapper types, String.class or Class.class&quot;;</span>
+                }
+<span class="fc" id="L293">                return &quot;VM does not not support modification of given type&quot;;</span>
+            }
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

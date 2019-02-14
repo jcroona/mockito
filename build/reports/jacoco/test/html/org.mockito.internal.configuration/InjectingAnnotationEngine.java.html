@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InjectingAnnotationEngine.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.configuration</a> &gt; <span class="el_source">InjectingAnnotationEngine.java</span></div><h1>InjectingAnnotationEngine.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2007 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.configuration;
+
+import java.lang.reflect.Field;
+import java.util.HashSet;
+import java.util.Set;
+import org.mockito.MockitoAnnotations;
+import org.mockito.internal.configuration.injection.scanner.InjectMocksScanner;
+import org.mockito.internal.configuration.injection.scanner.MockScanner;
+import org.mockito.plugins.AnnotationEngine;
+
+import static org.mockito.internal.util.collections.Sets.newMockSafeHashSet;
+
+/**
+ * See {@link MockitoAnnotations}
+ */
+<span class="fc" id="L20">public class InjectingAnnotationEngine implements AnnotationEngine, org.mockito.configuration.AnnotationEngine {</span>
+<span class="fc" id="L21">    private final AnnotationEngine delegate = new IndependentAnnotationEngine();</span>
+<span class="fc" id="L22">    private final AnnotationEngine spyAnnotationEngine = new SpyAnnotationEngine();</span>
+
+    /**
+     * Process the fields of the test instance and create Mocks, Spies, Captors and inject them on fields
+     * annotated &amp;#64;InjectMocks.
+     *
+     * &lt;p&gt;
+     * This code process the test class and the super classes.
+     * &lt;ol&gt;
+     * &lt;li&gt;First create Mocks, Spies, Captors.&lt;/li&gt;
+     * &lt;li&gt;Then try to inject them.&lt;/li&gt;
+     * &lt;/ol&gt;
+     *
+     * @param clazz Not used
+     * @param testInstance The instance of the test, should not be null.
+     *
+     * @see org.mockito.plugins.AnnotationEngine#process(Class, Object)
+     */
+    public void process(Class&lt;?&gt; clazz, Object testInstance) {
+<span class="fc" id="L41">        processIndependentAnnotations(testInstance.getClass(), testInstance);</span>
+<span class="fc" id="L42">        injectMocks(testInstance);</span>
+<span class="fc" id="L43">    }</span>
+
+    private void processIndependentAnnotations(final Class&lt;?&gt; clazz, final Object testInstance) {
+<span class="fc" id="L46">        Class&lt;?&gt; classContext = clazz;</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        while (classContext != Object.class) {</span>
+            //this will create @Mocks, @Captors, etc:
+<span class="fc" id="L49">            delegate.process(classContext, testInstance);</span>
+            //this will create @Spies:
+<span class="fc" id="L51">            spyAnnotationEngine.process(classContext, testInstance);</span>
+
+<span class="fc" id="L53">            classContext = classContext.getSuperclass();</span>
+        }
+<span class="fc" id="L55">    }</span>
+
+
+    /**
+     * Initializes mock/spies dependencies for objects annotated with
+     * &amp;#064;InjectMocks for given testClassInstance.
+     * &lt;p&gt;
+     * See examples in javadoc for {@link MockitoAnnotations} class.
+     *
+     * @param testClassInstance
+     *            Test class, usually &lt;code&gt;this&lt;/code&gt;
+     */
+    public void injectMocks(final Object testClassInstance) {
+<span class="fc" id="L68">        Class&lt;?&gt; clazz = testClassInstance.getClass();</span>
+<span class="fc" id="L69">        Set&lt;Field&gt; mockDependentFields = new HashSet&lt;Field&gt;();</span>
+<span class="fc" id="L70">        Set&lt;Object&gt; mocks = newMockSafeHashSet();</span>
+
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        while (clazz != Object.class) {</span>
+<span class="fc" id="L73">            new InjectMocksScanner(clazz).addTo(mockDependentFields);</span>
+<span class="fc" id="L74">            new MockScanner(testClassInstance, clazz).addPreparedMocks(mocks);</span>
+<span class="fc" id="L75">            onInjection(testClassInstance, clazz, mockDependentFields, mocks);</span>
+<span class="fc" id="L76">            clazz = clazz.getSuperclass();</span>
+        }
+
+<span class="fc" id="L79">        new DefaultInjectionEngine().injectMocksOnFields(mockDependentFields, mocks, testClassInstance);</span>
+<span class="fc" id="L80">    }</span>
+
+    protected void onInjection(Object testClassInstance, Class&lt;?&gt; clazz, Set&lt;Field&gt; mockDependentFields, Set&lt;Object&gt; mocks) {
+
+<span class="fc" id="L84">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReturnsArgumentAt.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.stubbing.answers</a> &gt; <span class="el_source">ReturnsArgumentAt.java</span></div><h1>ReturnsArgumentAt.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2007 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.stubbing.answers;
+
+import static org.mockito.internal.exceptions.Reporter.invalidArgumentPositionRangeAtInvocationTime;
+import static org.mockito.internal.exceptions.Reporter.invalidArgumentRangeAtIdentityAnswerCreationTime;
+import static org.mockito.internal.exceptions.Reporter.wrongTypeOfArgumentToReturn;
+
+import java.io.Serializable;
+import java.lang.reflect.Method;
+import org.mockito.invocation.Invocation;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+import org.mockito.stubbing.ValidableAnswer;
+
+/**
+ * Returns the passed parameter identity at specified index.
+ * &lt;p&gt;
+ * &lt;p&gt;
+ * The &lt;code&gt;argumentIndex&lt;/code&gt; represents the index in the argument array of the invocation.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * If this number equals -1 then the last argument is returned.
+ * &lt;/p&gt;
+ *
+ * @see org.mockito.AdditionalAnswers
+ * @since 1.9.5
+ */
+public class ReturnsArgumentAt implements Answer&lt;Object&gt;, ValidableAnswer, Serializable {
+
+    private static final long serialVersionUID = -589315085166295101L;
+
+    public static final int LAST_ARGUMENT = -1;
+
+    private final int wantedArgumentPosition;
+
+    /**
+     * Build the identity answer to return the argument at the given position in the argument array.
+     *
+     * @param wantedArgumentPosition
+     *            The position of the argument identity to return in the invocation. Using &lt;code&gt;-1&lt;/code&gt; indicates the last argument ({@link #LAST_ARGUMENT}).
+     */
+<span class="fc" id="L45">    public ReturnsArgumentAt(int wantedArgumentPosition) {</span>
+<span class="fc bfc" id="L46" title="All 4 branches covered.">        if (wantedArgumentPosition != LAST_ARGUMENT &amp;&amp; wantedArgumentPosition &lt; 0) {</span>
+<span class="fc" id="L47">            throw invalidArgumentRangeAtIdentityAnswerCreationTime();</span>
+        }
+<span class="fc" id="L49">        this.wantedArgumentPosition = wantedArgumentPosition;</span>
+<span class="fc" id="L50">    }</span>
+
+    @Override
+    public Object answer(InvocationOnMock invocation) throws Throwable {
+<span class="fc" id="L54">        int argumentPosition = inferWantedArgumentPosition(invocation);</span>
+<span class="fc" id="L55">        validateIndexWithinInvocationRange(invocation, argumentPosition);</span>
+
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (wantedArgIndexIsVarargAndSameTypeAsReturnType(invocation.getMethod(), argumentPosition)) {</span>
+            // answer raw vararg array argument
+<span class="fc" id="L59">            return ((Invocation) invocation).getRawArguments()[argumentPosition];</span>
+        }
+
+        // answer expanded argument at wanted position
+<span class="fc" id="L63">        return invocation.getArgument(argumentPosition);</span>
+
+    }
+
+    @Override
+    public void validateFor(InvocationOnMock invocation) {
+<span class="fc" id="L69">        int argumentPosition = inferWantedArgumentPosition(invocation);</span>
+<span class="fc" id="L70">        validateIndexWithinInvocationRange(invocation, argumentPosition);</span>
+<span class="fc" id="L71">        validateArgumentTypeCompatibility((Invocation) invocation, argumentPosition);</span>
+<span class="fc" id="L72">    }</span>
+
+    private int inferWantedArgumentPosition(InvocationOnMock invocation) {
+<span class="fc bfc" id="L75" title="All 2 branches covered.">        if (wantedArgumentPosition == LAST_ARGUMENT)</span>
+<span class="fc" id="L76">            return invocation.getArguments().length - 1;</span>
+
+<span class="fc" id="L78">        return wantedArgumentPosition;</span>
+    }
+
+    private void validateIndexWithinInvocationRange(InvocationOnMock invocation, int argumentPosition) {
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        if (!wantedArgumentPositionIsValidForInvocation(invocation, argumentPosition)) {</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">            throw invalidArgumentPositionRangeAtInvocationTime(invocation,</span>
+                                                               wantedArgumentPosition == LAST_ARGUMENT,
+                                                               wantedArgumentPosition);
+        }
+<span class="fc" id="L87">    }</span>
+
+    private void validateArgumentTypeCompatibility(Invocation invocation, int argumentPosition) {
+<span class="fc" id="L90">        InvocationInfo invocationInfo = new InvocationInfo(invocation);</span>
+
+<span class="fc" id="L92">        Class&lt;?&gt; inferredArgumentType = inferArgumentType(invocation, argumentPosition);</span>
+
+<span class="fc bfc" id="L94" title="All 2 branches covered.">        if (!invocationInfo.isValidReturnType(inferredArgumentType)){</span>
+<span class="fc" id="L95">            throw wrongTypeOfArgumentToReturn(invocation,</span>
+<span class="fc" id="L96">                                              invocationInfo.printMethodReturnType(),</span>
+                                              inferredArgumentType,
+                                              wantedArgumentPosition);
+        }
+<span class="fc" id="L100">    }</span>
+
+    private boolean wantedArgIndexIsVarargAndSameTypeAsReturnType(Method method, int argumentPosition) {
+<span class="fc" id="L103">        Class&lt;?&gt;[] parameterTypes = method.getParameterTypes();</span>
+<span class="fc bfc" id="L104" title="All 4 branches covered.">        return method.isVarArgs() &amp;&amp;</span>
+              argumentPosition == /* vararg index */ parameterTypes.length - 1 &amp;&amp;
+<span class="fc bfc" id="L106" title="All 2 branches covered.">              method.getReturnType().isAssignableFrom(parameterTypes[argumentPosition]);</span>
+    }
+
+    private boolean wantedArgumentPositionIsValidForInvocation(InvocationOnMock invocation, int argumentPosition) {
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        if (argumentPosition &lt; 0) {</span>
+<span class="fc" id="L111">            return false;</span>
+        }
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        if (!invocation.getMethod().isVarArgs()) {</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">            return invocation.getArguments().length &gt; argumentPosition;</span>
+        }
+        // for all varargs accepts positive ranges
+<span class="fc" id="L117">        return true;</span>
+    }
+
+    private Class&lt;?&gt; inferArgumentType(Invocation invocation, int argumentIndex) {
+<span class="fc" id="L121">        Class&lt;?&gt;[] parameterTypes = invocation.getMethod().getParameterTypes();</span>
+
+        // Easy when the method is not a vararg
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        if (!invocation.getMethod().isVarArgs()) {</span>
+<span class="fc" id="L125">            Class&lt;?&gt; argumentType = parameterTypes[argumentIndex];</span>
+<span class="fc" id="L126">            Object argumentValue = invocation.getArgument(argumentIndex);</span>
+            // we don't want to return primitive wrapper types
+<span class="fc bfc" id="L128" title="All 4 branches covered.">            if (argumentType.isPrimitive() || argumentValue == null) {</span>
+<span class="fc" id="L129">                return argumentType;</span>
+            }
+
+<span class="fc" id="L132">            return argumentValue.getClass();</span>
+        }
+
+        // Now for varargs
+<span class="fc" id="L136">        int varargIndex = parameterTypes.length - 1; // vararg always last</span>
+
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        if (argumentIndex &lt; varargIndex) {</span>
+            // Same for non vararg arguments
+<span class="fc" id="L140">            return parameterTypes[argumentIndex];</span>
+        }
+        // if wanted argument is vararg
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        if (wantedArgIndexIsVarargAndSameTypeAsReturnType(invocation.getMethod(), argumentIndex)) {</span>
+            // return the vararg array if return type is compatible
+            // because the user probably want to return the array itself if the return type is compatible
+<span class="fc" id="L146">            return parameterTypes[argumentIndex]; // move to MethodInfo ?</span>
+        }
+        // return the type in this vararg array
+<span class="fc" id="L149">        return parameterTypes[varargIndex].getComponentType();</span>
+
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

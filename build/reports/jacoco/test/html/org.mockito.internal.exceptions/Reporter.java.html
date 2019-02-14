@@ -1,0 +1,917 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Reporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.exceptions</a> &gt; <span class="el_source">Reporter.java</span></div><h1>Reporter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2007 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+
+package org.mockito.internal.exceptions;
+
+import org.mockito.exceptions.base.MockitoAssertionError;
+import org.mockito.exceptions.base.MockitoException;
+import org.mockito.exceptions.misusing.*;
+import org.mockito.exceptions.verification.MoreThanAllowedActualInvocations;
+import org.mockito.exceptions.verification.NeverWantedButInvoked;
+import org.mockito.exceptions.verification.NoInteractionsWanted;
+import org.mockito.exceptions.verification.SmartNullPointerException;
+import org.mockito.exceptions.verification.TooLittleActualInvocations;
+import org.mockito.exceptions.verification.TooManyActualInvocations;
+import org.mockito.exceptions.verification.VerificationInOrderFailure;
+import org.mockito.exceptions.verification.WantedButNotInvoked;
+import org.mockito.internal.debugging.LocationImpl;
+import org.mockito.internal.exceptions.util.ScenarioPrinter;
+import org.mockito.internal.junit.ExceptionFactory;
+import org.mockito.internal.matchers.LocalizedMatcher;
+import org.mockito.internal.util.MockUtil;
+import org.mockito.invocation.DescribedInvocation;
+import org.mockito.invocation.Invocation;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.invocation.Location;
+import org.mockito.listeners.InvocationListener;
+import org.mockito.mock.SerializableMode;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import static org.mockito.internal.reporting.Pluralizer.pluralize;
+import static org.mockito.internal.reporting.Pluralizer.were_exactly_x_interactions;
+import static org.mockito.internal.util.StringUtil.join;
+
+/**
+ * Reports verification and misusing errors.
+ * &lt;p&gt;
+ * One of the key points of mocking library is proper verification/exception
+ * messages. All messages in one place makes it easier to tune and amend them.
+ * &lt;p&gt;
+ * Reporter can be injected and therefore is easily testable.
+ * &lt;p&gt;
+ * Generally, exception messages are full of line breaks to make them easy to
+ * read (xunit plugins take only fraction of screen on modern IDEs).
+ */
+public class Reporter {
+
+    private final static String NON_PUBLIC_PARENT = &quot;Mocking methods declared on non-public parent classes is not supported.&quot;;
+
+    private Reporter() {
+    }
+
+    public static MockitoException checkedExceptionInvalid(Throwable t) {
+<span class="fc" id="L60">        return new MockitoException(join(</span>
+                &quot;Checked exception is invalid for this method!&quot;,
+                &quot;Invalid: &quot; + t
+        ));
+    }
+
+    public static MockitoException cannotStubWithNullThrowable() {
+<span class="fc" id="L67">        return new MockitoException(join(</span>
+                &quot;Cannot stub with null throwable!&quot;
+        ));
+
+    }
+
+    public static MockitoException unfinishedStubbing(Location location) {
+<span class="fc" id="L74">        return new UnfinishedStubbingException(join(</span>
+                &quot;Unfinished stubbing detected here:&quot;,
+                location,
+                &quot;&quot;,
+                &quot;E.g. thenReturn() may be missing.&quot;,
+                &quot;Examples of correct stubbing:&quot;,
+                &quot;    when(mock.isOk()).thenReturn(true);&quot;,
+                &quot;    when(mock.isOk()).thenThrow(exception);&quot;,
+                &quot;    doThrow(exception).when(mock).someVoidMethod();&quot;,
+                &quot;Hints:&quot;,
+                &quot; 1. missing thenReturn()&quot;,
+                &quot; 2. you are trying to stub a final method, which is not supported&quot;,
+                &quot; 3: you are stubbing the behaviour of another mock inside before 'thenReturn' instruction is completed&quot;,
+                &quot;&quot;
+        ));
+    }
+
+    public static MockitoException incorrectUseOfApi() {
+<span class="fc" id="L92">        return new MockitoException(join(</span>
+                &quot;Incorrect use of API detected here:&quot;,
+                new LocationImpl(),
+                &quot;&quot;,
+                &quot;You probably stored a reference to OngoingStubbing returned by when() and called stubbing methods like thenReturn() on this reference more than once.&quot;,
+                &quot;Examples of correct usage:&quot;,
+                &quot;    when(mock.isOk()).thenReturn(true).thenReturn(false).thenThrow(exception);&quot;,
+                &quot;    when(mock.isOk()).thenReturn(true, false).thenThrow(exception);&quot;,
+                &quot;&quot;
+        ));
+    }
+
+    public static MockitoException missingMethodInvocation() {
+<span class="fc" id="L105">        return new MissingMethodInvocationException(join(</span>
+                &quot;when() requires an argument which has to be 'a method call on a mock'.&quot;,
+                &quot;For example:&quot;,
+                &quot;    when(mock.getArticles()).thenReturn(articles);&quot;,
+                &quot;&quot;,
+                &quot;Also, this error might show up because:&quot;,
+                &quot;1. you stub either of: final/private/equals()/hashCode() methods.&quot;,
+                &quot;   Those methods *cannot* be stubbed/verified.&quot;,
+                &quot;   &quot; + NON_PUBLIC_PARENT,
+                &quot;2. inside when() you don't call method on mock but on some other object.&quot;,
+                &quot;&quot;
+        ));
+    }
+
+    public static MockitoException unfinishedVerificationException(Location location) {
+<span class="fc" id="L120">        return new UnfinishedVerificationException(join(</span>
+                &quot;Missing method call for verify(mock) here:&quot;,
+                location,
+                &quot;&quot;,
+                &quot;Example of correct verification:&quot;,
+                &quot;    verify(mock).doSomething()&quot;,
+                &quot;&quot;,
+                &quot;Also, this error might show up because you verify either of: final/private/equals()/hashCode() methods.&quot;,
+                &quot;Those methods *cannot* be stubbed/verified.&quot;,
+                NON_PUBLIC_PARENT,
+                &quot;&quot;
+        ));
+    }
+
+    public static MockitoException notAMockPassedToVerify(Class&lt;?&gt; type) {
+<span class="fc" id="L135">        return new NotAMockException(join(</span>
+<span class="fc" id="L136">                &quot;Argument passed to verify() is of type &quot; + type.getSimpleName() + &quot; and is not a mock!&quot;,</span>
+                &quot;Make sure you place the parenthesis correctly!&quot;,
+                &quot;See the examples of correct verifications:&quot;,
+                &quot;    verify(mock).someMethod();&quot;,
+                &quot;    verify(mock, times(10)).someMethod();&quot;,
+                &quot;    verify(mock, atLeastOnce()).someMethod();&quot;
+        ));
+    }
+
+    public static MockitoException nullPassedToVerify() {
+<span class="fc" id="L146">        return new NullInsteadOfMockException(join(</span>
+                &quot;Argument passed to verify() should be a mock but is null!&quot;,
+                &quot;Examples of correct verifications:&quot;,
+                &quot;    verify(mock).someMethod();&quot;,
+                &quot;    verify(mock, times(10)).someMethod();&quot;,
+                &quot;    verify(mock, atLeastOnce()).someMethod();&quot;,
+                &quot;    not: verify(mock.someMethod());&quot;,
+                &quot;Also, if you use @Mock annotation don't miss initMocks()&quot;
+        ));
+    }
+
+    public static MockitoException notAMockPassedToWhenMethod() {
+<span class="fc" id="L158">        return new NotAMockException(join(</span>
+                &quot;Argument passed to when() is not a mock!&quot;,
+                &quot;Example of correct stubbing:&quot;,
+                &quot;    doThrow(new RuntimeException()).when(mock).someMethod();&quot;
+        ));
+    }
+
+    public static MockitoException nullPassedToWhenMethod() {
+<span class="fc" id="L166">        return new NullInsteadOfMockException(join(</span>
+                &quot;Argument passed to when() is null!&quot;,
+                &quot;Example of correct stubbing:&quot;,
+                &quot;    doThrow(new RuntimeException()).when(mock).someMethod();&quot;,
+                &quot;Also, if you use @Mock annotation don't miss initMocks()&quot;
+        ));
+    }
+
+    public static MockitoException mocksHaveToBePassedToVerifyNoMoreInteractions() {
+<span class="fc" id="L175">        return new MockitoException(join(</span>
+                &quot;Method requires argument(s)!&quot;,
+                &quot;Pass mocks that should be verified, e.g:&quot;,
+                &quot;    verifyNoMoreInteractions(mockOne, mockTwo);&quot;,
+                &quot;    verifyZeroInteractions(mockOne, mockTwo);&quot;,
+                &quot;&quot;
+        ));
+    }
+
+    public static MockitoException notAMockPassedToVerifyNoMoreInteractions() {
+<span class="fc" id="L185">        return new NotAMockException(join(</span>
+                &quot;Argument(s) passed is not a mock!&quot;,
+                &quot;Examples of correct verifications:&quot;,
+                &quot;    verifyNoMoreInteractions(mockOne, mockTwo);&quot;,
+                &quot;    verifyZeroInteractions(mockOne, mockTwo);&quot;,
+                &quot;&quot;
+        ));
+    }
+
+    public static MockitoException nullPassedToVerifyNoMoreInteractions() {
+<span class="fc" id="L195">        return new NullInsteadOfMockException(join(</span>
+                &quot;Argument(s) passed is null!&quot;,
+                &quot;Examples of correct verifications:&quot;,
+                &quot;    verifyNoMoreInteractions(mockOne, mockTwo);&quot;,
+                &quot;    verifyZeroInteractions(mockOne, mockTwo);&quot;
+        ));
+    }
+
+    public static MockitoException notAMockPassedWhenCreatingInOrder() {
+<span class="fc" id="L204">        return new NotAMockException(join(</span>
+                &quot;Argument(s) passed is not a mock!&quot;,
+                &quot;Pass mocks that require verification in order.&quot;,
+                &quot;For example:&quot;,
+                &quot;    InOrder inOrder = inOrder(mockOne, mockTwo);&quot;
+        ));
+    }
+
+    public static MockitoException nullPassedWhenCreatingInOrder() {
+<span class="fc" id="L213">        return new NullInsteadOfMockException(join(</span>
+                &quot;Argument(s) passed is null!&quot;,
+                &quot;Pass mocks that require verification in order.&quot;,
+                &quot;For example:&quot;,
+                &quot;    InOrder inOrder = inOrder(mockOne, mockTwo);&quot;
+        ));
+    }
+
+    public static MockitoException mocksHaveToBePassedWhenCreatingInOrder() {
+<span class="fc" id="L222">        return new MockitoException(join(</span>
+                &quot;Method requires argument(s)!&quot;,
+                &quot;Pass mocks that require verification in order.&quot;,
+                &quot;For example:&quot;,
+                &quot;    InOrder inOrder = inOrder(mockOne, mockTwo);&quot;
+        ));
+    }
+
+    public static MockitoException inOrderRequiresFamiliarMock() {
+<span class="fc" id="L231">        return new MockitoException(join(</span>
+                &quot;InOrder can only verify mocks that were passed in during creation of InOrder.&quot;,
+                &quot;For example:&quot;,
+                &quot;    InOrder inOrder = inOrder(mockOne);&quot;,
+                &quot;    inOrder.verify(mockOne).doStuff();&quot;
+        ));
+    }
+
+    public static MockitoException invalidUseOfMatchers(int expectedMatchersCount, List&lt;LocalizedMatcher&gt; recordedMatchers) {
+<span class="fc" id="L240">        return new InvalidUseOfMatchersException(join(</span>
+                &quot;Invalid use of argument matchers!&quot;,
+<span class="fc" id="L242">                expectedMatchersCount + &quot; matchers expected, &quot; + recordedMatchers.size() + &quot; recorded:&quot; +</span>
+<span class="fc" id="L243">                        locationsOf(recordedMatchers),</span>
+                &quot;&quot;,
+                &quot;This exception may occur if matchers are combined with raw values:&quot;,
+                &quot;    //incorrect:&quot;,
+                &quot;    someMethod(anyObject(), \&quot;raw String\&quot;);&quot;,
+                &quot;When using matchers, all arguments have to be provided by matchers.&quot;,
+                &quot;For example:&quot;,
+                &quot;    //correct:&quot;,
+                &quot;    someMethod(anyObject(), eq(\&quot;String by matcher\&quot;));&quot;,
+                &quot;&quot;,
+                &quot;For more info see javadoc for Matchers class.&quot;,
+                &quot;&quot;
+        ));
+    }
+
+    public static MockitoException incorrectUseOfAdditionalMatchers(String additionalMatcherName, int expectedSubMatchersCount, Collection&lt;LocalizedMatcher&gt; matcherStack) {
+<span class="fc" id="L259">        return new InvalidUseOfMatchersException(join(</span>
+                &quot;Invalid use of argument matchers inside additional matcher &quot; + additionalMatcherName + &quot; !&quot;,
+                new LocationImpl(),
+                &quot;&quot;,
+<span class="fc" id="L263">                expectedSubMatchersCount + &quot; sub matchers expected, &quot; + matcherStack.size() + &quot; recorded:&quot;,</span>
+<span class="fc" id="L264">                locationsOf(matcherStack),</span>
+                &quot;&quot;,
+                &quot;This exception may occur if matchers are combined with raw values:&quot;,
+                &quot;    //incorrect:&quot;,
+                &quot;    someMethod(AdditionalMatchers.and(isNotNull(), \&quot;raw String\&quot;);&quot;,
+                &quot;When using matchers, all arguments have to be provided by matchers.&quot;,
+                &quot;For example:&quot;,
+                &quot;    //correct:&quot;,
+                &quot;    someMethod(AdditionalMatchers.and(isNotNull(), eq(\&quot;raw String\&quot;));&quot;,
+                &quot;&quot;,
+                &quot;For more info see javadoc for Matchers and AdditionalMatchers classes.&quot;,
+                &quot;&quot;
+        ));
+    }
+
+    public static MockitoException stubPassedToVerify(Object mock) {
+<span class="fc" id="L280">        return new CannotVerifyStubOnlyMock(join(</span>
+<span class="fc" id="L281">                &quot;Argument \&quot;&quot; + MockUtil.getMockName(mock) + &quot;\&quot; passed to verify is a stubOnly() mock which cannot be verified.&quot;,</span>
+                &quot;If you intend to verify invocations on this mock, don't use stubOnly() in its MockSettings.&quot;
+        ));
+    }
+
+    public static MockitoException reportNoSubMatchersFound(String additionalMatcherName) {
+<span class="fc" id="L287">        return new InvalidUseOfMatchersException(join(</span>
+                &quot;No matchers found for additional matcher &quot; + additionalMatcherName,
+                new LocationImpl(),
+                &quot;&quot;
+        ));
+    }
+
+
+    private static Object locationsOf(Collection&lt;LocalizedMatcher&gt; matchers) {
+<span class="fc" id="L296">        List&lt;String&gt; description = new ArrayList&lt;String&gt;();</span>
+<span class="fc bfc" id="L297" title="All 2 branches covered.">        for (LocalizedMatcher matcher : matchers)</span>
+<span class="fc" id="L298">            description.add(matcher.getLocation().toString());</span>
+<span class="fc" id="L299">        return join(description.toArray());</span>
+    }
+
+    public static AssertionError argumentsAreDifferent(String wanted, String actual, Location actualLocation) {
+<span class="fc" id="L303">        String message = join(&quot;Argument(s) are different! Wanted:&quot;,</span>
+                              wanted,
+                              new LocationImpl(),
+                              &quot;Actual invocation has different arguments:&quot;,
+                              actual,
+                              actualLocation,
+                              &quot;&quot;
+        );
+
+<span class="fc" id="L312">        return ExceptionFactory.createArgumentsAreDifferentException(message, wanted, actual);</span>
+    }
+
+    public static MockitoAssertionError wantedButNotInvoked(DescribedInvocation wanted) {
+<span class="fc" id="L316">        return new WantedButNotInvoked(createWantedButNotInvokedMessage(wanted));</span>
+    }
+
+    public static MockitoAssertionError wantedButNotInvoked(DescribedInvocation wanted, List&lt;? extends DescribedInvocation&gt; invocations) {
+        String allInvocations;
+<span class="fc bfc" id="L321" title="All 2 branches covered.">        if (invocations.isEmpty()) {</span>
+<span class="fc" id="L322">            allInvocations = &quot;Actually, there were zero interactions with this mock.\n&quot;;</span>
+        } else {
+<span class="fc" id="L324">            StringBuilder sb = new StringBuilder(</span>
+<span class="fc" id="L325">                    &quot;\nHowever, there &quot; + were_exactly_x_interactions(invocations.size()) + &quot; with this mock:\n&quot;);</span>
+<span class="fc bfc" id="L326" title="All 2 branches covered.">            for (DescribedInvocation i : invocations) {</span>
+<span class="fc" id="L327">                sb.append(i.toString())</span>
+<span class="fc" id="L328">                  .append(&quot;\n&quot;)</span>
+<span class="fc" id="L329">                  .append(i.getLocation())</span>
+<span class="fc" id="L330">                  .append(&quot;\n\n&quot;);</span>
+<span class="fc" id="L331">            }</span>
+<span class="fc" id="L332">            allInvocations = sb.toString();</span>
+        }
+
+<span class="fc" id="L335">        String message = createWantedButNotInvokedMessage(wanted);</span>
+<span class="fc" id="L336">        return new WantedButNotInvoked(message + allInvocations);</span>
+    }
+
+    private static String createWantedButNotInvokedMessage(DescribedInvocation wanted) {
+<span class="fc" id="L340">        return join(</span>
+                &quot;Wanted but not invoked:&quot;,
+<span class="fc" id="L342">                wanted.toString(),</span>
+                new LocationImpl(),
+                &quot;&quot;
+        );
+    }
+
+    public static MockitoAssertionError wantedButNotInvokedInOrder(DescribedInvocation wanted, DescribedInvocation previous) {
+<span class="fc" id="L349">        return new VerificationInOrderFailure(join(</span>
+                &quot;Verification in order failure&quot;,
+                &quot;Wanted but not invoked:&quot;,
+<span class="fc" id="L352">                wanted.toString(),</span>
+                new LocationImpl(),
+                &quot;Wanted anywhere AFTER following interaction:&quot;,
+<span class="fc" id="L355">                previous.toString(),</span>
+<span class="fc" id="L356">                previous.getLocation(),</span>
+                &quot;&quot;
+        ));
+    }
+
+    public static MockitoAssertionError tooManyActualInvocations(int wantedCount, int actualCount, DescribedInvocation wanted, List&lt;Location&gt; locations) {
+<span class="fc" id="L362">        String message = createTooManyInvocationsMessage(wantedCount, actualCount, wanted, locations);</span>
+<span class="fc" id="L363">        return new TooManyActualInvocations(message);</span>
+    }
+
+    private static String createTooManyInvocationsMessage(int wantedCount, int actualCount, DescribedInvocation wanted,
+                                                          List&lt;Location&gt; invocations) {
+<span class="fc" id="L368">        return join(</span>
+<span class="fc" id="L369">                wanted.toString(),</span>
+<span class="fc" id="L370">                &quot;Wanted &quot; + pluralize(wantedCount) + &quot;:&quot;,</span>
+                new LocationImpl(),
+<span class="fc" id="L372">                &quot;But was &quot; + pluralize(actualCount) + &quot;:&quot;,</span>
+<span class="fc" id="L373">                createAllLocationsMessage(invocations),</span>
+                &quot;&quot;
+        );
+    }
+
+    public static MockitoAssertionError neverWantedButInvoked(DescribedInvocation wanted, List&lt;Location&gt; invocations) {
+<span class="fc" id="L379">        return new NeverWantedButInvoked(join(</span>
+<span class="fc" id="L380">                wanted.toString(),</span>
+                &quot;Never wanted here:&quot;,
+                new LocationImpl(),
+                &quot;But invoked here:&quot;,
+<span class="fc" id="L384">                createAllLocationsMessage(invocations)</span>
+        ));
+    }
+
+    public static MockitoAssertionError tooManyActualInvocationsInOrder(int wantedCount, int actualCount, DescribedInvocation wanted, List&lt;Location&gt; invocations) {
+<span class="fc" id="L389">        String message = createTooManyInvocationsMessage(wantedCount, actualCount, wanted, invocations);</span>
+<span class="fc" id="L390">        return new VerificationInOrderFailure(join(</span>
+                &quot;Verification in order failure:&quot; + message
+        ));
+    }
+
+    private static String createAllLocationsMessage(List&lt;Location&gt; locations) {
+<span class="fc bfc" id="L396" title="All 2 branches covered.">        if (locations == null) {</span>
+<span class="fc" id="L397">            return &quot;\n&quot;;</span>
+        }
+<span class="fc" id="L399">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc bfc" id="L400" title="All 2 branches covered.">        for (Location location : locations) {</span>
+<span class="fc" id="L401">            sb.append(location).append(&quot;\n&quot;);</span>
+<span class="fc" id="L402">        }</span>
+<span class="fc" id="L403">        return sb.toString();</span>
+    }
+
+    private static String createTooLittleInvocationsMessage(org.mockito.internal.reporting.Discrepancy discrepancy,
+                                                            DescribedInvocation wanted,
+                                                            List&lt;Location&gt; locations) {
+<span class="fc" id="L409">        return join(</span>
+<span class="fc" id="L410">                wanted.toString(),</span>
+<span class="pc bpc" id="L411" title="1 of 2 branches missed.">                &quot;Wanted &quot; + discrepancy.getPluralizedWantedCount() + (discrepancy.getWantedCount() == 0 ? &quot;.&quot; : &quot;:&quot;),</span>
+                new LocationImpl(),
+<span class="fc bfc" id="L413" title="All 2 branches covered.">                &quot;But was &quot; + discrepancy.getPluralizedActualCount() + (discrepancy.getActualCount() == 0 ? &quot;.&quot; : &quot;:&quot;),</span>
+<span class="fc" id="L414">                createAllLocationsMessage(locations)</span>
+        );
+    }
+
+    public static MockitoAssertionError tooLittleActualInvocations(org.mockito.internal.reporting.Discrepancy discrepancy, DescribedInvocation wanted, List&lt;Location&gt; allLocations) {
+<span class="fc" id="L419">        String message = createTooLittleInvocationsMessage(discrepancy, wanted, allLocations);</span>
+
+<span class="fc" id="L421">        return new TooLittleActualInvocations(message);</span>
+    }
+
+    public static MockitoAssertionError tooLittleActualInvocationsInOrder(org.mockito.internal.reporting.Discrepancy discrepancy, DescribedInvocation wanted, List&lt;Location&gt; locations) {
+<span class="fc" id="L425">        String message = createTooLittleInvocationsMessage(discrepancy, wanted, locations);</span>
+
+<span class="fc" id="L427">        return new VerificationInOrderFailure(join(</span>
+                &quot;Verification in order failure:&quot; + message
+        ));
+    }
+
+    public static MockitoAssertionError noMoreInteractionsWanted(Invocation undesired, List&lt;VerificationAwareInvocation&gt; invocations) {
+<span class="fc" id="L433">        ScenarioPrinter scenarioPrinter = new ScenarioPrinter();</span>
+<span class="fc" id="L434">        String scenario = scenarioPrinter.print(invocations);</span>
+
+<span class="fc" id="L436">        return new NoInteractionsWanted(join(</span>
+                &quot;No interactions wanted here:&quot;,
+                new LocationImpl(),
+<span class="fc" id="L439">                &quot;But found this interaction on mock '&quot; + MockUtil.getMockName(undesired.getMock()) + &quot;':&quot;,</span>
+<span class="fc" id="L440">                undesired.getLocation(),</span>
+                scenario
+        ));
+    }
+
+    public static MockitoAssertionError noMoreInteractionsWantedInOrder(Invocation undesired) {
+<span class="fc" id="L446">        return new VerificationInOrderFailure(join(</span>
+                &quot;No interactions wanted here:&quot;,
+                new LocationImpl(),
+<span class="fc" id="L449">                &quot;But found this interaction on mock '&quot; + MockUtil.getMockName(undesired.getMock()) + &quot;':&quot;,</span>
+<span class="fc" id="L450">                undesired.getLocation()</span>
+        ));
+    }
+
+    public static MockitoException cannotMockClass(Class&lt;?&gt; clazz, String reason) {
+<span class="fc" id="L455">        return new MockitoException(join(</span>
+<span class="fc" id="L456">                &quot;Cannot mock/spy &quot; + clazz.toString(),</span>
+                &quot;Mockito cannot mock/spy because :&quot;,
+                &quot; - &quot; + reason
+        ));
+    }
+
+    public static MockitoException cannotStubVoidMethodWithAReturnValue(String methodName) {
+<span class="fc" id="L463">        return new CannotStubVoidMethodWithReturnValue(join(</span>
+                &quot;'&quot; + methodName + &quot;' is a *void method* and it *cannot* be stubbed with a *return value*!&quot;,
+                &quot;Voids are usually stubbed with Throwables:&quot;,
+                &quot;    doThrow(exception).when(mock).someVoidMethod();&quot;,
+                &quot;If you need to set the void method to do nothing you can use:&quot;,
+                &quot;    doNothing().when(mock).someVoidMethod();&quot;,
+                &quot;For more information, check out the javadocs for Mockito.doNothing().&quot;,
+                &quot;***&quot;,
+                &quot;If you're unsure why you're getting above error read on.&quot;,
+                &quot;Due to the nature of the syntax above problem might occur because:&quot;,
+                &quot;1. The method you are trying to stub is *overloaded*. Make sure you are calling the right overloaded version.&quot;,
+                &quot;2. Somewhere in your test you are stubbing *final methods*. Sorry, Mockito does not verify/stub final methods.&quot;,
+                &quot;3. A spy is stubbed using when(spy.foo()).then() syntax. It is safer to stub spies - &quot;,
+                &quot;   - with doReturn|Throw() family of methods. More in javadocs for Mockito.spy() method.&quot;,
+                &quot;4. &quot; + NON_PUBLIC_PARENT,
+                &quot;&quot;
+        ));
+    }
+
+    public static MockitoException onlyVoidMethodsCanBeSetToDoNothing() {
+<span class="fc" id="L483">        return new MockitoException(join(</span>
+                &quot;Only void methods can doNothing()!&quot;,
+                &quot;Example of correct use of doNothing():&quot;,
+                &quot;    doNothing().&quot;,
+                &quot;    doThrow(new RuntimeException())&quot;,
+                &quot;    .when(mock).someVoidMethod();&quot;,
+                &quot;Above means:&quot;,
+                &quot;someVoidMethod() does nothing the 1st time but throws an exception the 2nd time is called&quot;
+        ));
+    }
+
+    public static MockitoException wrongTypeOfReturnValue(String expectedType, String actualType, String methodName) {
+<span class="fc" id="L495">        return new WrongTypeOfReturnValue(join(</span>
+                actualType + &quot; cannot be returned by &quot; + methodName + &quot;()&quot;,
+                methodName + &quot;() should return &quot; + expectedType,
+                &quot;***&quot;,
+                &quot;If you're unsure why you're getting above error read on.&quot;,
+                &quot;Due to the nature of the syntax above problem might occur because:&quot;,
+                &quot;1. This exception *might* occur in wrongly written multi-threaded tests.&quot;,
+                &quot;   Please refer to Mockito FAQ on limitations of concurrency testing.&quot;,
+                &quot;2. A spy is stubbed using when(spy.foo()).then() syntax. It is safer to stub spies - &quot;,
+                &quot;   - with doReturn|Throw() family of methods. More in javadocs for Mockito.spy() method.&quot;,
+                &quot;&quot;
+        ));
+    }
+
+    public static MockitoException wrongTypeReturnedByDefaultAnswer(Object mock, String expectedType, String actualType, String methodName) {
+<span class="fc" id="L510">        return new WrongTypeOfReturnValue(join(</span>
+                &quot;Default answer returned a result with the wrong type:&quot;,
+                actualType + &quot; cannot be returned by &quot; + methodName + &quot;()&quot;,
+                methodName + &quot;() should return &quot; + expectedType,
+                &quot;&quot;,
+<span class="fc" id="L515">                &quot;The default answer of &quot; + MockUtil.getMockName(mock) + &quot; that was configured on the mock is probably incorrectly implemented.&quot;,</span>
+                &quot;&quot;
+        ));
+    }
+
+    public static MoreThanAllowedActualInvocations wantedAtMostX(int maxNumberOfInvocations, int foundSize) {
+<span class="fc" id="L521">        return new MoreThanAllowedActualInvocations(join(&quot;Wanted at most &quot; + pluralize(maxNumberOfInvocations) + &quot; but was &quot; + foundSize));</span>
+    }
+
+    public static MockitoException misplacedArgumentMatcher(List&lt;LocalizedMatcher&gt; lastMatchers) {
+<span class="fc" id="L525">        return new InvalidUseOfMatchersException(join(</span>
+                &quot;Misplaced or misused argument matcher detected here:&quot;,
+<span class="fc" id="L527">                locationsOf(lastMatchers),</span>
+                &quot;&quot;,
+                &quot;You cannot use argument matchers outside of verification or stubbing.&quot;,
+                &quot;Examples of correct usage of argument matchers:&quot;,
+                &quot;    when(mock.get(anyInt())).thenReturn(null);&quot;,
+                &quot;    doThrow(new RuntimeException()).when(mock).someVoidMethod(anyObject());&quot;,
+                &quot;    verify(mock).someMethod(contains(\&quot;foo\&quot;))&quot;,
+                &quot;&quot;,
+                &quot;This message may appear after an NullPointerException if the last matcher is returning an object &quot;,
+                &quot;like any() but the stubbed method signature expect a primitive argument, in this case,&quot;,
+                &quot;use primitive alternatives.&quot;,
+                &quot;    when(mock.get(any())); // bad use, will raise NPE&quot;,
+                &quot;    when(mock.get(anyInt())); // correct usage use&quot;,
+                &quot;&quot;,
+                &quot;Also, this error might show up because you use argument matchers with methods that cannot be mocked.&quot;,
+                &quot;Following methods *cannot* be stubbed/verified: final/private/equals()/hashCode().&quot;,
+                NON_PUBLIC_PARENT,
+                &quot;&quot;
+        ));
+    }
+
+    public static MockitoException smartNullPointerException(String invocation, Location location) {
+<span class="fc" id="L549">        return new SmartNullPointerException(join(</span>
+                &quot;You have a NullPointerException here:&quot;,
+                new LocationImpl(),
+                &quot;because this method call was *not* stubbed correctly:&quot;,
+                location,
+                invocation,
+                &quot;&quot;
+        ));
+    }
+
+    public static MockitoException noArgumentValueWasCaptured() {
+<span class="fc" id="L560">        return new MockitoException(join(</span>
+                &quot;No argument value was captured!&quot;,
+                &quot;You might have forgotten to use argument.capture() in verify()...&quot;,
+                &quot;...or you used capture() in stubbing but stubbed method was not called.&quot;,
+                &quot;Be aware that it is recommended to use capture() only with verify()&quot;,
+                &quot;&quot;,
+                &quot;Examples of correct argument capturing:&quot;,
+                &quot;    ArgumentCaptor&lt;Person&gt; argument = ArgumentCaptor.forClass(Person.class);&quot;,
+                &quot;    verify(mock).doSomething(argument.capture());&quot;,
+                &quot;    assertEquals(\&quot;John\&quot;, argument.getValue().getName());&quot;,
+                &quot;&quot;
+        ));
+    }
+
+    public static MockitoException extraInterfacesDoesNotAcceptNullParameters() {
+<span class="fc" id="L575">        return new MockitoException(join(</span>
+                &quot;extraInterfaces() does not accept null parameters.&quot;
+        ));
+    }
+
+    public static MockitoException extraInterfacesAcceptsOnlyInterfaces(Class&lt;?&gt; wrongType) {
+<span class="fc" id="L581">        return new MockitoException(join(</span>
+                &quot;extraInterfaces() accepts only interfaces.&quot;,
+<span class="fc" id="L583">                &quot;You passed following type: &quot; + wrongType.getSimpleName() + &quot; which is not an interface.&quot;</span>
+        ));
+    }
+
+    public static MockitoException extraInterfacesCannotContainMockedType(Class&lt;?&gt; wrongType) {
+<span class="fc" id="L588">        return new MockitoException(join(</span>
+                &quot;extraInterfaces() does not accept the same type as the mocked type.&quot;,
+<span class="fc" id="L590">                &quot;You mocked following type: &quot; + wrongType.getSimpleName(),</span>
+                &quot;and you passed the same very interface to the extraInterfaces()&quot;
+        ));
+    }
+
+    public static MockitoException extraInterfacesRequiresAtLeastOneInterface() {
+<span class="fc" id="L596">        return new MockitoException(join(</span>
+                &quot;extraInterfaces() requires at least one interface.&quot;
+        ));
+    }
+
+    public static MockitoException mockedTypeIsInconsistentWithSpiedInstanceType(Class&lt;?&gt; mockedType, Object spiedInstance) {
+<span class="fc" id="L602">        return new MockitoException(join(</span>
+                &quot;Mocked type must be the same as the type of your spied instance.&quot;,
+<span class="fc" id="L604">                &quot;Mocked type must be: &quot; + spiedInstance.getClass().getSimpleName() + &quot;, but is: &quot; + mockedType.getSimpleName(),</span>
+                &quot;  //correct spying:&quot;,
+                &quot;  spy = mock( -&gt;ArrayList.class&lt;- , withSettings().spiedInstance( -&gt;new ArrayList()&lt;- );&quot;,
+                &quot;  //incorrect - types don't match:&quot;,
+                &quot;  spy = mock( -&gt;List.class&lt;- , withSettings().spiedInstance( -&gt;new ArrayList()&lt;- );&quot;
+        ));
+    }
+
+    public static MockitoException cannotCallAbstractRealMethod() {
+<span class="fc" id="L613">        return new MockitoException(join(</span>
+                &quot;Cannot call abstract real method on java object!&quot;,
+                &quot;Calling real methods is only possible when mocking non abstract method.&quot;,
+                &quot;  //correct example:&quot;,
+                &quot;  when(mockOfConcreteClass.nonAbstractMethod()).thenCallRealMethod();&quot;
+        ));
+    }
+
+    public static MockitoException cannotVerifyToString() {
+<span class="fc" id="L622">        return new MockitoException(join(</span>
+                &quot;Mockito cannot verify toString()&quot;,
+                &quot;toString() is too often used behind of scenes  (i.e. during String concatenation, in IDE debugging views). &quot; +
+                        &quot;Verifying it may give inconsistent or hard to understand results. &quot; +
+                        &quot;Not to mention that verifying toString() most likely hints awkward design (hard to explain in a short exception message. Trust me...)&quot;,
+                &quot;However, it is possible to stub toString(). Stubbing toString() smells a bit funny but there are rare, legitimate use cases.&quot;
+        ));
+    }
+
+    public static MockitoException moreThanOneAnnotationNotAllowed(String fieldName) {
+<span class="fc" id="L632">        return new MockitoException(&quot;You cannot have more than one Mockito annotation on a field!\n&quot; +</span>
+                                            &quot;The field '&quot; + fieldName + &quot;' has multiple Mockito annotations.\n&quot; +
+                                            &quot;For info how to use annotations see examples in javadoc for MockitoAnnotations class.&quot;);
+    }
+
+    public static MockitoException unsupportedCombinationOfAnnotations(String undesiredAnnotationOne, String undesiredAnnotationTwo) {
+<span class="fc" id="L638">        return new MockitoException(&quot;This combination of annotations is not permitted on a single field:\n&quot; +</span>
+                                            &quot;@&quot; + undesiredAnnotationOne + &quot; and @&quot; + undesiredAnnotationTwo);
+    }
+
+    public static MockitoException cannotInitializeForSpyAnnotation(String fieldName, Exception details) {
+<span class="nc" id="L643">        return new MockitoException(join(&quot;Cannot instantiate a @Spy for '&quot; + fieldName + &quot;' field.&quot;,</span>
+                                         &quot;You haven't provided the instance for spying at field declaration so I tried to construct the instance.&quot;,
+<span class="nc" id="L645">                                         &quot;However, I failed because: &quot; + details.getMessage(),</span>
+                                         &quot;Examples of correct usage of @Spy:&quot;,
+                                         &quot;   @Spy List mock = new LinkedList();&quot;,
+                                         &quot;   @Spy Foo foo; //only if Foo has parameterless constructor&quot;,
+                                         &quot;   //also, don't forget about MockitoAnnotations.initMocks();&quot;,
+                                         &quot;&quot;), details);
+    }
+
+    public static MockitoException cannotInitializeForInjectMocksAnnotation(String fieldName, String causeMessage) {
+<span class="fc" id="L654">        return new MockitoException(join(&quot;Cannot instantiate @InjectMocks field named '&quot; + fieldName + &quot;'! Cause: &quot;+causeMessage,</span>
+                                         &quot;You haven't provided the instance at field declaration so I tried to construct the instance.&quot;,
+                                         &quot;Examples of correct usage of @InjectMocks:&quot;,
+                                         &quot;   @InjectMocks Service service = new Service();&quot;,
+                                         &quot;   @InjectMocks Service service;&quot;,
+                                         &quot;   //and... don't forget about some @Mocks for injection :)&quot;,
+                                         &quot;&quot;));
+    }
+
+    public static MockitoException atMostAndNeverShouldNotBeUsedWithTimeout() {
+<span class="nc" id="L664">        return new FriendlyReminderException(join(&quot;&quot;,</span>
+                                                  &quot;Don't panic! I'm just a friendly reminder!&quot;,
+                                                  &quot;timeout() should not be used with atMost() or never() because...&quot;,
+                                                  &quot;...it does not make much sense - the test would have passed immediately in concurrency&quot;,
+                                                  &quot;We kept this method only to avoid compilation errors when upgrading Mockito.&quot;,
+                                                  &quot;In future release we will remove timeout(x).atMost(y) from the API.&quot;,
+                                                  &quot;If you want to find out more please refer to issue 235&quot;,
+                                                  &quot;&quot;));
+    }
+
+    public static MockitoException fieldInitialisationThrewException(Field field, Throwable details) {
+<span class="fc" id="L675">        return new InjectMocksException(join(</span>
+<span class="fc" id="L676">                &quot;Cannot instantiate @InjectMocks field named '&quot; + field.getName() + &quot;' of type '&quot; + field.getType() + &quot;'.&quot;,</span>
+                &quot;You haven't provided the instance at field declaration so I tried to construct the instance.&quot;,
+<span class="fc" id="L678">                &quot;However the constructor or the initialization block threw an exception : &quot; + details.getMessage(),</span>
+                &quot;&quot;), details);
+
+    }
+
+    public static MockitoException methodDoesNotAcceptParameter(String method, String parameter) {
+<span class="fc" id="L684">        return new MockitoException(method + &quot;() does not accept &quot; + parameter + &quot; See the Javadoc.&quot;);</span>
+    }
+
+    public static MockitoException invocationListenersRequiresAtLeastOneListener() {
+<span class="fc" id="L688">        return new MockitoException(&quot;invocationListeners() requires at least one listener&quot;);</span>
+    }
+
+    public static MockitoException invocationListenerThrewException(InvocationListener listener, Throwable listenerThrowable) {
+<span class="fc" id="L692">        return new MockitoException(join(</span>
+<span class="fc" id="L693">                &quot;The invocation listener with type &quot; + listener.getClass().getName(),</span>
+<span class="fc" id="L694">                &quot;threw an exception : &quot; + listenerThrowable.getClass().getName() + listenerThrowable.getMessage()), listenerThrowable);</span>
+    }
+
+    public static MockitoException cannotInjectDependency(Field field, Object matchingMock, Exception details) {
+<span class="fc" id="L698">        return new MockitoException(join(</span>
+<span class="fc" id="L699">                &quot;Mockito couldn't inject mock dependency '&quot; + MockUtil.getMockName(matchingMock) + &quot;' on field &quot;,</span>
+                &quot;'&quot; + field + &quot;'&quot;,
+<span class="fc" id="L701">                &quot;whose type '&quot; + field.getDeclaringClass().getCanonicalName() + &quot;' was annotated by @InjectMocks in your test.&quot;,</span>
+<span class="fc" id="L702">                &quot;Also I failed because: &quot; + exceptionCauseMessageIfAvailable(details),</span>
+                &quot;&quot;
+        ), details);
+    }
+
+    private static String exceptionCauseMessageIfAvailable(Exception details) {
+<span class="pc bpc" id="L708" title="1 of 2 branches missed.">        if (details.getCause() == null) {</span>
+<span class="fc" id="L709">            return details.getMessage();</span>
+        }
+<span class="nc" id="L711">        return details.getCause().getMessage();</span>
+    }
+
+    public static MockitoException mockedTypeIsInconsistentWithDelegatedInstanceType(Class&lt;?&gt; mockedType, Object delegatedInstance) {
+<span class="nc" id="L715">        return new MockitoException(join(</span>
+                &quot;Mocked type must be the same as the type of your delegated instance.&quot;,
+<span class="nc" id="L717">                &quot;Mocked type must be: &quot; + delegatedInstance.getClass().getSimpleName() + &quot;, but is: &quot; + mockedType.getSimpleName(),</span>
+                &quot;  //correct delegate:&quot;,
+                &quot;  spy = mock( -&gt;List.class&lt;- , withSettings().delegatedInstance( -&gt;new ArrayList()&lt;- );&quot;,
+                &quot;  //incorrect - types don't match:&quot;,
+                &quot;  spy = mock( -&gt;List.class&lt;- , withSettings().delegatedInstance( -&gt;new HashSet()&lt;- );&quot;
+        ));
+    }
+
+    public static MockitoException spyAndDelegateAreMutuallyExclusive() {
+<span class="nc" id="L726">        return new MockitoException(join(</span>
+                &quot;Settings should not define a spy instance and a delegated instance at the same time.&quot;
+        ));
+    }
+
+    public static MockitoException invalidArgumentRangeAtIdentityAnswerCreationTime() {
+<span class="fc" id="L732">        return new MockitoException(join(</span>
+                &quot;Invalid argument index.&quot;,
+                &quot;The index need to be a positive number that indicates the position of the argument to return.&quot;,
+                &quot;However it is possible to use the -1 value to indicates that the last argument should be&quot;,
+                &quot;returned.&quot;));
+    }
+
+    public static MockitoException invalidArgumentPositionRangeAtInvocationTime(InvocationOnMock invocation, boolean willReturnLastParameter, int argumentIndex) {
+<span class="fc" id="L740">        return new MockitoException(join(</span>
+                &quot;Invalid argument index for the current invocation of method : &quot;,
+<span class="fc" id="L742">                &quot; -&gt; &quot; + MockUtil.getMockName(invocation.getMock()) + &quot;.&quot; + invocation.getMethod().getName() + &quot;()&quot;,</span>
+                &quot;&quot;,
+<span class="fc bfc" id="L744" title="All 2 branches covered.">                (willReturnLastParameter ?</span>
+<span class="fc" id="L745">                        &quot;Last parameter wanted&quot; :</span>
+<span class="fc" id="L746">                        &quot;Wanted parameter at position &quot; + argumentIndex) + &quot; but &quot; + possibleArgumentTypesOf(invocation),</span>
+                &quot;The index need to be a positive number that indicates a valid position of the argument in the invocation.&quot;,
+                &quot;However it is possible to use the -1 value to indicates that the last argument should be returned.&quot;,
+                &quot;&quot;
+        ));
+    }
+
+    private static StringBuilder possibleArgumentTypesOf(InvocationOnMock invocation) {
+<span class="fc" id="L754">        Class&lt;?&gt;[] parameterTypes = invocation.getMethod().getParameterTypes();</span>
+<span class="fc bfc" id="L755" title="All 2 branches covered.">        if (parameterTypes.length == 0) {</span>
+<span class="fc" id="L756">            return new StringBuilder(&quot;the method has no arguments.\n&quot;);</span>
+        }
+
+<span class="fc" id="L759">        StringBuilder stringBuilder = new StringBuilder(&quot;the possible argument indexes for this method are :\n&quot;);</span>
+<span class="fc bfc" id="L760" title="All 2 branches covered.">        for (int i = 0, parameterTypesLength = parameterTypes.length; i &lt; parameterTypesLength; i++) {</span>
+<span class="fc" id="L761">            stringBuilder.append(&quot;    [&quot;).append(i);</span>
+
+<span class="fc bfc" id="L763" title="All 4 branches covered.">            if (invocation.getMethod().isVarArgs() &amp;&amp; i == parameterTypesLength - 1) {</span>
+<span class="fc" id="L764">                stringBuilder.append(&quot;+] &quot;).append(parameterTypes[i].getComponentType().getSimpleName()).append(&quot;  &lt;- Vararg&quot;).append(&quot;\n&quot;);</span>
+            } else {
+<span class="fc" id="L766">                stringBuilder.append(&quot;] &quot;).append(parameterTypes[i].getSimpleName()).append(&quot;\n&quot;);</span>
+            }
+        }
+<span class="fc" id="L769">        return stringBuilder;</span>
+    }
+
+    public static MockitoException wrongTypeOfArgumentToReturn(InvocationOnMock invocation, String expectedType, Class&lt;?&gt; actualType, int argumentIndex) {
+<span class="fc" id="L773">        return new WrongTypeOfReturnValue(join(</span>
+<span class="fc" id="L774">                &quot;The argument of type '&quot; + actualType.getSimpleName() + &quot;' cannot be returned because the following &quot;,</span>
+                &quot;method should return the type '&quot; + expectedType + &quot;'&quot;,
+<span class="fc" id="L776">                &quot; -&gt; &quot; + MockUtil.getMockName(invocation.getMock()) + &quot;.&quot; + invocation.getMethod().getName() + &quot;()&quot;,</span>
+                &quot;&quot;,
+                &quot;The reason for this error can be :&quot;,
+                &quot;1. The wanted argument position is incorrect.&quot;,
+                &quot;2. The answer is used on the wrong interaction.&quot;,
+                &quot;&quot;,
+<span class="fc" id="L782">                &quot;Position of the wanted argument is &quot; + argumentIndex + &quot; and &quot; + possibleArgumentTypesOf(invocation),</span>
+                &quot;***&quot;,
+                &quot;However if you're still unsure why you're getting above error read on.&quot;,
+                &quot;Due to the nature of the syntax above problem might occur because:&quot;,
+                &quot;1. This exception *might* occur in wrongly written multi-threaded tests.&quot;,
+                &quot;   Please refer to Mockito FAQ on limitations of concurrency testing.&quot;,
+                &quot;2. A spy is stubbed using when(spy.foo()).then() syntax. It is safer to stub spies - &quot;,
+                &quot;   - with doReturn|Throw() family of methods. More in javadocs for Mockito.spy() method.&quot;,
+                &quot;&quot;
+        ));
+    }
+
+    public static MockitoException defaultAnswerDoesNotAcceptNullParameter() {
+<span class="nc" id="L795">        return new MockitoException(&quot;defaultAnswer() does not accept null parameter&quot;);</span>
+    }
+
+    public static MockitoException serializableWontWorkForObjectsThatDontImplementSerializable(Class&lt;?&gt; classToMock) {
+<span class="nc" id="L799">        return new MockitoException(join(</span>
+<span class="nc" id="L800">                &quot;You are using the setting 'withSettings().serializable()' however the type you are trying to mock '&quot; + classToMock.getSimpleName() + &quot;'&quot;,</span>
+                &quot;do not implement Serializable AND do not have a no-arg constructor.&quot;,
+                &quot;This combination is requested, otherwise you will get an 'java.io.InvalidClassException' when the mock will be serialized&quot;,
+                &quot;&quot;,
+                &quot;Also note that as requested by the Java serialization specification, the whole hierarchy need to implements Serializable,&quot;,
+                &quot;i.e. the top-most superclass has to implements Serializable.&quot;,
+                &quot;&quot;
+        ));
+    }
+
+    public static MockitoException delegatedMethodHasWrongReturnType(Method mockMethod, Method delegateMethod, Object mock, Object delegate) {
+<span class="fc" id="L811">        return new MockitoException(join(</span>
+                &quot;Methods called on delegated instance must have compatible return types with the mock.&quot;,
+<span class="fc" id="L813">                &quot;When calling: &quot; + mockMethod + &quot; on mock: &quot; + MockUtil.getMockName(mock),</span>
+<span class="fc" id="L814">                &quot;return type should be: &quot; + mockMethod.getReturnType().getSimpleName() + &quot;, but was: &quot; + delegateMethod.getReturnType().getSimpleName(),</span>
+                &quot;Check that the instance passed to delegatesTo() is of the correct type or contains compatible methods&quot;,
+<span class="fc" id="L816">                &quot;(delegate instance had type: &quot; + delegate.getClass().getSimpleName() + &quot;)&quot;</span>
+        ));
+    }
+
+    public static MockitoException delegatedMethodDoesNotExistOnDelegate(Method mockMethod, Object mock, Object delegate) {
+<span class="fc" id="L821">        return new MockitoException(join(</span>
+                &quot;Methods called on mock must exist in delegated instance.&quot;,
+<span class="fc" id="L823">                &quot;When calling: &quot; + mockMethod + &quot; on mock: &quot; + MockUtil.getMockName(mock),</span>
+                &quot;no such method was found.&quot;,
+                &quot;Check that the instance passed to delegatesTo() is of the correct type or contains compatible methods&quot;,
+<span class="fc" id="L826">                &quot;(delegate instance had type: &quot; + delegate.getClass().getSimpleName() + &quot;)&quot;</span>
+        ));
+    }
+
+    public static MockitoException usingConstructorWithFancySerializable(SerializableMode mode) {
+<span class="fc" id="L831">        return new MockitoException(&quot;Mocks instantiated with constructor cannot be combined with &quot; + mode + &quot; serialization mode.&quot;);</span>
+    }
+
+    public static MockitoException cannotCreateTimerWithNegativeDurationTime(long durationMillis) {
+<span class="fc" id="L835">        return new FriendlyReminderException(join(</span>
+                &quot;&quot;,
+                &quot;Don't panic! I'm just a friendly reminder!&quot;,
+                &quot;It is impossible for time to go backward, therefore...&quot;,
+                &quot;You cannot put negative value of duration: (&quot; + durationMillis + &quot;)&quot;,
+                &quot;as argument of timer methods (after(), timeout())&quot;,
+                &quot;&quot;
+        ));
+    }
+
+    public static MockitoException notAnException() {
+<span class="fc" id="L846">        return new MockitoException(join(</span>
+                &quot;Exception type cannot be null.&quot;,
+                &quot;This may happen with doThrow(Class)|thenThrow(Class) family of methods if passing null parameter.&quot;));
+    }
+
+    public static UnnecessaryStubbingException formatUnncessaryStubbingException(Class&lt;?&gt; testClass, Collection&lt;Invocation&gt; unnecessaryStubbings) {
+<span class="fc" id="L852">        StringBuilder stubbings = new StringBuilder();</span>
+<span class="fc" id="L853">        int count = 1;</span>
+<span class="fc bfc" id="L854" title="All 2 branches covered.">        for (Invocation u : unnecessaryStubbings) {</span>
+<span class="fc" id="L855">            stubbings.append(&quot;\n  &quot;).append(count++).append(&quot;. &quot;).append(u.getLocation());</span>
+<span class="fc" id="L856">        }</span>
+<span class="fc bfc" id="L857" title="All 2 branches covered.">        String heading = (testClass != null)?</span>
+<span class="fc" id="L858">                &quot;Unnecessary stubbings detected in test class: &quot; + testClass.getSimpleName() :</span>
+<span class="fc" id="L859">                &quot;Unnecessary stubbings detected.&quot;;</span>
+
+<span class="fc" id="L861">        return new UnnecessaryStubbingException(join(</span>
+                heading,
+                &quot;Clean &amp; maintainable test code requires zero unnecessary code.&quot;,
+                &quot;Following stubbings are unnecessary (click to navigate to relevant line of code):&quot; + stubbings,
+                &quot;Please remove unnecessary stubbings or use 'lenient' strictness. More info: javadoc for UnnecessaryStubbingException class.&quot;
+        ));
+    }
+
+    public static void unncessaryStubbingException(List&lt;Invocation&gt; unused) {
+<span class="fc" id="L870">        throw formatUnncessaryStubbingException(null, unused);</span>
+    }
+
+    public static void potentialStubbingProblem(
+            Invocation actualInvocation, Collection&lt;Invocation&gt; argMismatchStubbings) {
+<span class="fc" id="L875">        StringBuilder stubbings = new StringBuilder();</span>
+<span class="fc" id="L876">        int count = 1;</span>
+<span class="fc bfc" id="L877" title="All 2 branches covered.">        for (Invocation s : argMismatchStubbings) {</span>
+<span class="fc" id="L878">            stubbings.append(&quot;    &quot;).append(count++).append(&quot;. &quot;).append(s);</span>
+<span class="fc" id="L879">            stubbings.append(&quot;\n      &quot;).append(s.getLocation()).append(&quot;\n&quot;);</span>
+<span class="fc" id="L880">        }</span>
+<span class="fc" id="L881">        stubbings.deleteCharAt(stubbings.length()-1); //remove trailing end of line</span>
+
+<span class="fc" id="L883">        throw new PotentialStubbingProblem(join(</span>
+                &quot;Strict stubbing argument mismatch. Please check:&quot;,
+<span class="fc" id="L885">                &quot; - this invocation of '&quot; + actualInvocation.getMethod().getName() + &quot;' method:&quot;,</span>
+                &quot;    &quot; + actualInvocation,
+<span class="fc" id="L887">                &quot;    &quot; + actualInvocation.getLocation(),</span>
+                &quot; - has following stubbing(s) with different arguments:&quot;,
+                stubbings,
+                &quot;Typically, stubbing argument mismatch indicates user mistake when writing tests.&quot;,
+                &quot;Mockito fails early so that you can debug potential problem easily.&quot;,
+                &quot;However, there are legit scenarios when this exception generates false negative signal:&quot;,
+                &quot;  - stubbing the same method multiple times using 'given().will()' or 'when().then()' API&quot;,
+                &quot;    Please use 'will().given()' or 'doReturn().when()' API for stubbing.&quot;,
+                &quot;  - stubbed method is intentionally invoked with different arguments by code under test&quot;,
+                &quot;    Please use default or 'silent' JUnit Rule (equivalent of Strictness.LENIENT).&quot;,
+                &quot;For more information see javadoc for PotentialStubbingProblem class.&quot;));
+    }
+
+    public static void redundantMockitoListener(String listenerType) {
+<span class="fc" id="L901">        throw new RedundantListenerException(join(</span>
+            &quot;Problems adding Mockito listener.&quot;,
+            &quot;Listener of type '&quot; + listenerType + &quot;' has already been added and not removed.&quot;,
+            &quot;It indicates that previous listener was not removed according to the API.&quot;,
+            &quot;When you add a listener, don't forget to remove the listener afterwards:&quot;,
+            &quot;  Mockito.framework().removeListener(myListener);&quot;,
+            &quot;For more information, see the javadoc for RedundantListenerException class.&quot;));
+    }
+
+    public static void unfinishedMockingSession() {
+<span class="fc" id="L911">        throw new UnfinishedMockingSessionException(join(</span>
+                &quot;Unfinished mocking session detected.&quot;,
+                &quot;Previous MockitoSession was not concluded with 'finishMocking()'.&quot;,
+                &quot;For examples of correct usage see javadoc for MockitoSession class.&quot;));
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

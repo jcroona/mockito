@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ValuePrinter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.matchers.text</a> &gt; <span class="el_source">ValuePrinter.java</span></div><h1>ValuePrinter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.matchers.text;
+
+import java.lang.reflect.Array;
+import java.util.Iterator;
+import java.util.Map;
+
+import static java.lang.String.valueOf;
+
+/**
+ * Prints a Java object value in a way humans can read it neatly.
+ * Inspired on hamcrest. Used for printing arguments in verification errors.
+ */
+public class ValuePrinter {
+
+    private ValuePrinter(){}
+
+    /**
+     * Prints given value so that it is neatly readable by humans.
+     * Handles explosive toString() implementations.
+     */
+    public static String print(final Object value) {
+<span class="fc bfc" id="L26" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L27">            return &quot;null&quot;;</span>
+        }
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        if (value instanceof String) {</span>
+<span class="fc" id="L30">            return '&quot;' + value.toString() + '&quot;';</span>
+        }
+<span class="fc bfc" id="L32" title="All 2 branches covered.">        if (value instanceof Character) {</span>
+<span class="fc" id="L33">            return printChar((Character) value);</span>
+        }
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        if (value instanceof Long) {</span>
+<span class="fc" id="L36">            return value + &quot;L&quot;;</span>
+        }
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (value instanceof Double) {</span>
+<span class="fc" id="L39">            return value + &quot;d&quot;;</span>
+        }
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (value instanceof Float) {</span>
+<span class="fc" id="L42">            return value + &quot;f&quot;;</span>
+        }
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        if (value instanceof Short) {</span>
+<span class="fc" id="L45">            return &quot;(short) &quot; + value;</span>
+        }
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        if (value instanceof Byte) {</span>
+<span class="fc" id="L48">            return String.format(&quot;(byte) 0x%02X&quot;, (Byte) value);</span>
+        }
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (value instanceof Map) {</span>
+<span class="fc" id="L51">            return printMap((Map&lt;?, ?&gt;) value);</span>
+        }
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        if (value.getClass().isArray()) {</span>
+<span class="fc" id="L54">            return printValues(&quot;[&quot;, &quot;, &quot;, &quot;]&quot;, new Iterator&lt;Object&gt;() {</span>
+<span class="fc" id="L55">                private int currentIndex = 0;</span>
+
+                public boolean hasNext() {
+<span class="fc bfc" id="L58" title="All 2 branches covered.">                    return currentIndex &lt; Array.getLength(value);</span>
+                }
+
+                public Object next() {
+<span class="fc" id="L62">                    return Array.get(value, currentIndex++);</span>
+                }
+
+                public void remove() {
+<span class="nc" id="L66">                    throw new UnsupportedOperationException(&quot;cannot remove items from an array&quot;);</span>
+                }
+            });
+        }
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        if (value instanceof FormattedText) {</span>
+<span class="fc" id="L71">            return (((FormattedText) value).getText());</span>
+        }
+
+<span class="fc" id="L74">        return descriptionOf(value);</span>
+    }
+
+    private static String printMap(Map&lt;?,?&gt; map) {
+<span class="fc" id="L78">        StringBuilder result = new StringBuilder();</span>
+<span class="fc" id="L79">        Iterator&lt;? extends Map.Entry&lt;?, ?&gt;&gt; iterator = map.entrySet().iterator();</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        while (iterator.hasNext()) {</span>
+<span class="fc" id="L81">            Map.Entry&lt;?, ?&gt; entry = iterator.next();</span>
+<span class="fc" id="L82">            result.append(print(entry.getKey())).append(&quot; = &quot;).append(print(entry.getValue()));</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">            if (iterator.hasNext()) {</span>
+<span class="fc" id="L84">                result.append(&quot;, &quot;);</span>
+            }
+<span class="fc" id="L86">        }</span>
+<span class="fc" id="L87">        return &quot;{&quot; + result.toString() + &quot;}&quot;;</span>
+    }
+
+    /**
+     * Print values in a nice format, e.g. (1, 2, 3)
+     *
+     * @param start the beginning of the values, e.g. &quot;(&quot;
+     * @param separator the separator of values, e.g. &quot;, &quot;
+     * @param end the end of the values, e.g. &quot;)&quot;
+     * @param values the values to print
+     *
+     * @return neatly formatted value list
+     */
+    public static String printValues(String start, String separator, String end, Iterator&lt;?&gt; values) {
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">        if(start == null){</span>
+<span class="nc" id="L102">            start = &quot;(&quot;;</span>
+        }
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">        if (separator == null){</span>
+<span class="nc" id="L105">            separator = &quot;,&quot;;</span>
+        }
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        if (end == null){</span>
+<span class="nc" id="L108">            end = &quot;)&quot;;</span>
+        }
+
+<span class="fc" id="L111">        StringBuilder sb = new StringBuilder(start);</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        while(values.hasNext()) {</span>
+<span class="fc" id="L113">            sb.append(print(values.next()));</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">            if (values.hasNext()) {</span>
+<span class="fc" id="L115">                sb.append(separator);</span>
+            }
+        }
+<span class="fc" id="L118">        return sb.append(end).toString();</span>
+    }
+
+    private static String printChar(char value) {
+<span class="fc" id="L122">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L123">        sb.append('\'');</span>
+<span class="pc bpc" id="L124" title="1 of 5 branches missed.">        switch (value) {</span>
+            case '&quot;':
+<span class="nc" id="L126">                sb.append(&quot;\\\&quot;&quot;);</span>
+<span class="nc" id="L127">                break;</span>
+            case '\n':
+<span class="fc" id="L129">                sb.append(&quot;\\n&quot;);</span>
+<span class="fc" id="L130">                break;</span>
+            case '\r':
+<span class="fc" id="L132">                sb.append(&quot;\\r&quot;);</span>
+<span class="fc" id="L133">                break;</span>
+            case '\t':
+<span class="fc" id="L135">                sb.append(&quot;\\t&quot;);</span>
+<span class="fc" id="L136">                break;</span>
+            default:
+<span class="fc" id="L138">                sb.append(value);</span>
+        }
+<span class="fc" id="L140">        sb.append('\'');</span>
+<span class="fc" id="L141">        return sb.toString();</span>
+    }
+
+    private static String descriptionOf(Object value) {
+        try {
+<span class="fc" id="L146">            return valueOf(value);</span>
+        }
+<span class="fc" id="L148">        catch (Exception e) {</span>
+<span class="fc" id="L149">            return value.getClass().getName() + &quot;@&quot; + Integer.toHexString(value.hashCode());</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

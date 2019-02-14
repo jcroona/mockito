@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MockitoAnnotations.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito</a> &gt; <span class="el_source">MockitoAnnotations.java</span></div><h1>MockitoAnnotations.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2007 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+
+package org.mockito;
+
+import org.mockito.exceptions.base.MockitoException;
+import org.mockito.internal.configuration.GlobalConfiguration;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.plugins.AnnotationEngine;
+
+/**
+ * MockitoAnnotations.initMocks(this); initializes fields annotated with Mockito annotations.
+ * See also {@link MockitoSession} which not only initializes mocks
+ * but also adds extra validation for cleaner tests!
+ * &lt;p&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;Allows shorthand creation of objects required for testing.&lt;/li&gt;
+ * &lt;li&gt;Minimizes repetitive mock creation code.&lt;/li&gt;
+ * &lt;li&gt;Makes the test class more readable.&lt;/li&gt;
+ * &lt;li&gt;Makes the verification error easier to read because &lt;b&gt;field name&lt;/b&gt; is used to identify the mock.&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * &lt;pre class=&quot;code&quot;&gt;&lt;code class=&quot;java&quot;&gt;
+ *   public class ArticleManagerTest extends SampleBaseTestCase {
+ *
+ *       &amp;#064;Mock private ArticleCalculator calculator;
+ *       &amp;#064;Mock private ArticleDatabase database;
+ *       &amp;#064;Mock private UserProvider userProvider;
+ *
+ *       private ArticleManager manager;
+ *
+ *       &amp;#064;Before public void setup() {
+ *           manager = new ArticleManager(userProvider, database, calculator);
+ *       }
+ *   }
+ *
+ *   public class SampleBaseTestCase {
+ *
+ *       &amp;#064;Before public void initMocks() {
+ *           MockitoAnnotations.initMocks(this);
+ *       }
+ *   }
+ * &lt;/code&gt;&lt;/pre&gt;
+ * &lt;p&gt;
+ * Read also about other annotations &amp;#064;{@link Spy}, &amp;#064;{@link Captor}, &amp;#064;{@link InjectMocks}
+ * &lt;p&gt;
+ * &lt;b&gt;&lt;code&gt;MockitoAnnotations.initMocks(this)&lt;/code&gt;&lt;/b&gt; method has to called to initialize annotated fields.
+ * &lt;p&gt;
+ * In above example, &lt;code&gt;initMocks()&lt;/code&gt; is called in &amp;#064;Before (JUnit4) method of test's base class.
+ * For JUnit3 &lt;code&gt;initMocks()&lt;/code&gt; can go to &lt;code&gt;setup()&lt;/code&gt; method of a base class.
+ * You can also put initMocks() in your JUnit runner (&amp;#064;RunWith) or use built-in runner: {@link MockitoJUnitRunner}
+ */
+<span class="nc" id="L55">public class MockitoAnnotations {</span>
+
+    /**
+     * Initializes objects annotated with Mockito annotations for given testClass:
+     *  &amp;#064;{@link org.mockito.Mock}, &amp;#064;{@link Spy}, &amp;#064;{@link Captor}, &amp;#064;{@link InjectMocks}
+     * &lt;p&gt;
+     * See examples in javadoc for {@link MockitoAnnotations} class.
+     */
+    public static void initMocks(Object testClass) {
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (testClass == null) {</span>
+<span class="fc" id="L65">            throw new MockitoException(&quot;testClass cannot be null. For info how to use @Mock annotations see examples in javadoc for MockitoAnnotations class&quot;);</span>
+        }
+
+<span class="fc" id="L68">        AnnotationEngine annotationEngine = new GlobalConfiguration().tryGetPluginAnnotationEngine();</span>
+<span class="fc" id="L69">        annotationEngine.process(testClass.getClass(), testClass);</span>
+<span class="fc" id="L70">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

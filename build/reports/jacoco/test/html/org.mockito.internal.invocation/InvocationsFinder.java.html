@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InvocationsFinder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.invocation</a> &gt; <span class="el_source">InvocationsFinder.java</span></div><h1>InvocationsFinder.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2007 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+
+package org.mockito.internal.invocation;
+
+import java.util.LinkedList;
+import java.util.List;
+
+import org.mockito.internal.util.collections.ListUtil;
+import org.mockito.internal.util.collections.ListUtil.Filter;
+import org.mockito.internal.verification.api.InOrderContext;
+import org.mockito.invocation.Invocation;
+import org.mockito.invocation.Location;
+import org.mockito.invocation.MatchableInvocation;
+
+public class InvocationsFinder {
+
+    private InvocationsFinder() {
+    }
+
+    public static List&lt;Invocation&gt; findInvocations(List&lt;Invocation&gt; invocations, MatchableInvocation wanted) {
+<span class="fc" id="L24">        return ListUtil.filter(invocations, new RemoveNotMatching(wanted));</span>
+    }
+
+    public static List&lt;Invocation&gt; findAllMatchingUnverifiedChunks(List&lt;Invocation&gt; invocations, MatchableInvocation wanted, InOrderContext orderingContext) {
+<span class="fc" id="L28">        List&lt;Invocation&gt; unverified = removeVerifiedInOrder(invocations, orderingContext);</span>
+<span class="fc" id="L29">        return ListUtil.filter(unverified, new RemoveNotMatching(wanted));</span>
+    }
+
+    /**
+     * some examples how it works:
+     *
+     * Given invocations sequence:
+     * 1,1,2,1
+     *
+     * if wanted is 1 and mode is times(2) then returns
+     * 1,1
+     *
+     * if wanted is 1 and mode is atLeast() then returns
+     * 1,1,1
+     *
+     * if wanted is 1 and mode is times(x), where x != 2 then returns
+     * 1,1,1
+     */
+    public static List&lt;Invocation&gt; findMatchingChunk(List&lt;Invocation&gt; invocations, MatchableInvocation wanted, int wantedCount, InOrderContext context) {
+<span class="fc" id="L48">        List&lt;Invocation&gt; unverified = removeVerifiedInOrder(invocations, context);</span>
+<span class="fc" id="L49">        List&lt;Invocation&gt; firstChunk = getFirstMatchingChunk(wanted, unverified);</span>
+
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if (wantedCount != firstChunk.size()) {</span>
+<span class="fc" id="L52">            return findAllMatchingUnverifiedChunks(invocations, wanted, context);</span>
+        } else {
+<span class="fc" id="L54">            return firstChunk;</span>
+        }
+    }
+
+    private static List&lt;Invocation&gt; getFirstMatchingChunk(MatchableInvocation wanted, List&lt;Invocation&gt; unverified) {
+<span class="fc" id="L59">        List&lt;Invocation&gt; firstChunk = new LinkedList&lt;Invocation&gt;();</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        for (Invocation invocation : unverified) {</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">            if (wanted.matches(invocation)) {</span>
+<span class="fc" id="L62">                firstChunk.add(invocation);</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">            } else if (!firstChunk.isEmpty()) {</span>
+<span class="fc" id="L64">                break;</span>
+            }
+<span class="fc" id="L66">        }</span>
+<span class="fc" id="L67">        return firstChunk;</span>
+    }
+
+    public static Invocation findFirstMatchingUnverifiedInvocation(List&lt;Invocation&gt; invocations, MatchableInvocation wanted, InOrderContext context ){
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        for( Invocation invocation : removeVerifiedInOrder( invocations, context )){</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">            if( wanted.matches( invocation )){</span>
+<span class="fc" id="L73">                return invocation;</span>
+            }
+<span class="fc" id="L75">        }</span>
+<span class="fc" id="L76">        return null;</span>
+    }
+
+    public static Invocation findSimilarInvocation(List&lt;Invocation&gt; invocations, MatchableInvocation wanted) {
+<span class="fc" id="L80">        Invocation firstSimilar = null;</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        for (Invocation invocation : invocations) {</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">            if (!wanted.hasSimilarMethod(invocation)) {</span>
+<span class="fc" id="L83">                continue;</span>
+            }
+<span class="fc bfc" id="L85" title="All 2 branches covered.">            if (firstSimilar == null) {</span>
+<span class="fc" id="L86">                firstSimilar = invocation;</span>
+            }
+<span class="fc bfc" id="L88" title="All 2 branches covered.">            if (wanted.hasSameMethod(invocation)) {</span>
+<span class="fc" id="L89">                return invocation;</span>
+            }
+<span class="fc" id="L91">        }</span>
+
+<span class="fc" id="L93">        return firstSimilar;</span>
+    }
+
+    public static Invocation findFirstUnverified(List&lt;Invocation&gt; invocations) {
+<span class="fc" id="L97">        return findFirstUnverified(invocations, null);</span>
+    }
+
+    static Invocation findFirstUnverified(List&lt;Invocation&gt; invocations, Object mock) {
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        for (Invocation i : invocations) {</span>
+<span class="fc bfc" id="L102" title="All 4 branches covered.">            boolean mockIsValid = mock == null || mock == i.getMock();</span>
+<span class="fc bfc" id="L103" title="All 4 branches covered.">            if (!i.isVerified() &amp;&amp; mockIsValid) {</span>
+<span class="fc" id="L104">                return i;</span>
+            }
+<span class="fc" id="L106">        }</span>
+<span class="fc" id="L107">        return null;</span>
+    }
+
+    public static Location getLastLocation(List&lt;Invocation&gt; invocations) {
+<span class="fc bfc" id="L111" title="All 2 branches covered.">        if (invocations.isEmpty()) {</span>
+<span class="fc" id="L112">            return null;</span>
+        } else {
+<span class="fc" id="L114">            Invocation last = invocations.get(invocations.size() - 1);</span>
+<span class="fc" id="L115">            return last.getLocation();</span>
+        }
+    }
+
+    public static Invocation findPreviousVerifiedInOrder(List&lt;Invocation&gt; invocations, InOrderContext context) {
+<span class="fc" id="L120">        LinkedList&lt;Invocation&gt; verifiedOnly = ListUtil.filter(invocations, new RemoveUnverifiedInOrder(context));</span>
+
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        if (verifiedOnly.isEmpty()) {</span>
+<span class="fc" id="L123">            return null;</span>
+        } else {
+<span class="fc" id="L125">            return verifiedOnly.getLast();</span>
+        }
+    }
+
+    private static List&lt;Invocation&gt; removeVerifiedInOrder(List&lt;Invocation&gt; invocations, InOrderContext orderingContext) {
+<span class="fc" id="L130">        List&lt;Invocation&gt; unverified = new LinkedList&lt;Invocation&gt;();</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">        for (Invocation i : invocations) {</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">            if (orderingContext.isVerified(i)) {</span>
+<span class="fc" id="L133">                unverified.clear();</span>
+            } else {
+<span class="fc" id="L135">                unverified.add(i);</span>
+            }
+<span class="fc" id="L137">        }</span>
+<span class="fc" id="L138">        return unverified;</span>
+    }
+
+    public static List&lt;Location&gt; getAllLocations(List&lt;Invocation&gt; invocations) {
+<span class="fc" id="L142">        List&lt;Location&gt; locations = new LinkedList&lt;Location&gt;();</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        for (Invocation invocation : invocations) {</span>
+<span class="fc" id="L144">            locations.add(invocation.getLocation());</span>
+<span class="fc" id="L145">        }</span>
+<span class="fc" id="L146">        return locations;</span>
+    }
+
+    private static class RemoveNotMatching implements Filter&lt;Invocation&gt; {
+        private final MatchableInvocation wanted;
+
+<span class="fc" id="L152">        private RemoveNotMatching(MatchableInvocation wanted) {</span>
+<span class="fc" id="L153">            this.wanted = wanted;</span>
+<span class="fc" id="L154">        }</span>
+
+        public boolean isOut(Invocation invocation) {
+<span class="fc bfc" id="L157" title="All 2 branches covered.">            return !wanted.matches(invocation);</span>
+        }
+    }
+
+    private static class RemoveUnverifiedInOrder implements Filter&lt;Invocation&gt; {
+        private final InOrderContext orderingContext;
+
+<span class="fc" id="L164">        public RemoveUnverifiedInOrder(InOrderContext orderingContext) {</span>
+<span class="fc" id="L165">            this.orderingContext = orderingContext;</span>
+<span class="fc" id="L166">        }</span>
+
+        public boolean isOut(Invocation invocation) {
+<span class="fc bfc" id="L169" title="All 2 branches covered.">            return !orderingContext.isVerified(invocation);</span>
+        }
+    }
+
+    /**
+     * i3 is unverified here:
+     *
+     * i1, i2, i3
+     *     v
+     *
+     * all good here:
+     *
+     * i1, i2, i3
+     *     v   v
+     *
+     * @param context
+     * @param orderedInvocations
+     */
+    public static Invocation findFirstUnverifiedInOrder(InOrderContext context, List&lt;Invocation&gt; orderedInvocations) {
+<span class="fc" id="L188">        Invocation candidate = null;</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">        for(Invocation i : orderedInvocations) {</span>
+<span class="fc bfc" id="L190" title="All 2 branches covered.">            if (!context.isVerified(i)) {</span>
+<span class="fc bfc" id="L191" title="All 2 branches covered.">                candidate = candidate != null ? candidate : i;</span>
+            } else {
+<span class="fc" id="L193">                candidate = null;</span>
+            }
+<span class="fc" id="L195">        }</span>
+<span class="fc" id="L196">        return candidate;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

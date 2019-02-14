@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WeakConcurrentSet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.util.concurrent</a> &gt; <span class="el_source">WeakConcurrentSet.java</span></div><h1>WeakConcurrentSet.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.util.concurrent;
+
+import java.util.Iterator;
+import java.util.Map;
+
+/**
+ * &lt;p&gt;
+ * A thread-safe set with weak values. Entries are based on a key's system hash code and keys are considered equal only by reference equality.
+ * &lt;/p&gt;
+ * This class does not implement the {@link java.util.Set} interface because this implementation is incompatible
+ * with the set contract. While iterating over a set's entries, any value that has not passed iteration is referenced non-weakly.
+ */
+public class WeakConcurrentSet&lt;V&gt; implements Runnable, Iterable&lt;V&gt; {
+
+    final WeakConcurrentMap&lt;V, Boolean&gt; target;
+
+<span class="fc" id="L21">    public WeakConcurrentSet(Cleaner cleaner) {</span>
+<span class="pc bpc" id="L22" title="2 of 3 branches missed.">        switch (cleaner) {</span>
+            case INLINE:
+<span class="fc" id="L24">                target = new WeakConcurrentMap.WithInlinedExpunction&lt;V, Boolean&gt;();</span>
+<span class="fc" id="L25">                break;</span>
+            case THREAD:
+            case MANUAL:
+<span class="nc bnc" id="L28" title="All 2 branches missed.">                target = new WeakConcurrentMap&lt;V, Boolean&gt;(cleaner == Cleaner.THREAD);</span>
+<span class="nc" id="L29">                break;</span>
+            default:
+<span class="nc" id="L31">                throw new AssertionError();</span>
+        }
+<span class="fc" id="L33">    }</span>
+
+    /**
+     * @param value The value to add to the set.
+     * @return {@code true} if the value was added to the set and was not contained before.
+     */
+    public boolean add(V value) {
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        return target.put(value, Boolean.TRUE) == null; // is null or Boolean.TRUE</span>
+    }
+
+    /**
+     * @param value The value to check if it is contained in the set.
+     * @return {@code true} if the set contains the value.
+     */
+    public boolean contains(V value) {
+<span class="fc" id="L48">        return target.containsKey(value);</span>
+    }
+
+    /**
+     * @param value The value to remove from the set.
+     * @return {@code true} if the value is contained in the set.
+     */
+    public boolean remove(V value) {
+<span class="fc" id="L56">        return target.remove(value);</span>
+    }
+
+    /**
+     * Clears the set.
+     */
+    public void clear() {
+<span class="nc" id="L63">        target.clear();</span>
+<span class="nc" id="L64">    }</span>
+
+    /**
+     * Returns the approximate size of this set where the returned number is at least as big as the actual number of entries.
+     *
+     * @return The minimum size of this set.
+     */
+    public int approximateSize() {
+<span class="nc" id="L72">        return target.approximateSize();</span>
+    }
+
+    @Override
+    public void run() {
+<span class="nc" id="L77">        target.run();</span>
+<span class="nc" id="L78">    }</span>
+
+    /**
+     * Determines the cleaning format. A reference is removed either by an explicitly started cleaner thread
+     * associated with this instance ({@link Cleaner#THREAD}), as a result of interacting with this thread local
+     * from any thread ({@link Cleaner#INLINE} or manually by submitting the detached thread local to a thread
+     * ({@link Cleaner#MANUAL}).
+     */
+<span class="fc" id="L86">    public enum Cleaner {</span>
+<span class="fc" id="L87">        THREAD, INLINE, MANUAL</span>
+    }
+
+    /**
+     * Cleans all unused references.
+     */
+    public void expungeStaleEntries() {
+<span class="nc" id="L94">        target.expungeStaleEntries();</span>
+<span class="nc" id="L95">    }</span>
+
+    /**
+     * @return The cleaner thread or {@code null} if no such thread was set.
+     */
+    public Thread getCleanerThread() {
+<span class="nc" id="L101">        return target.getCleanerThread();</span>
+    }
+
+    @Override
+    public Iterator&lt;V&gt; iterator() {
+<span class="nc" id="L106">        return new ReducingIterator&lt;V&gt;(target.iterator());</span>
+    }
+
+    private static class ReducingIterator&lt;V&gt; implements Iterator&lt;V&gt; {
+
+        private final Iterator&lt;Map.Entry&lt;V, Boolean&gt;&gt; iterator;
+
+<span class="nc" id="L113">        private ReducingIterator(Iterator&lt;Map.Entry&lt;V, Boolean&gt;&gt; iterator) {</span>
+<span class="nc" id="L114">            this.iterator = iterator;</span>
+<span class="nc" id="L115">        }</span>
+
+        @Override
+        public void remove() {
+<span class="nc" id="L119">            iterator.remove();</span>
+<span class="nc" id="L120">        }</span>
+
+        @Override
+        public V next() {
+<span class="nc" id="L124">            return iterator.next().getKey();</span>
+        }
+
+        @Override
+        public boolean hasNext() {
+<span class="nc" id="L129">            return iterator.hasNext();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

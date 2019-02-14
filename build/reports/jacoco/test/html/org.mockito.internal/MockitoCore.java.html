@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MockitoCore.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal</a> &gt; <span class="el_source">MockitoCore.java</span></div><h1>MockitoCore.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2007 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal;
+
+import org.mockito.InOrder;
+import org.mockito.MockSettings;
+import org.mockito.MockingDetails;
+import org.mockito.exceptions.misusing.NotAMockException;
+import org.mockito.internal.creation.MockSettingsImpl;
+import org.mockito.internal.invocation.finder.VerifiableInvocationsFinder;
+import org.mockito.internal.listeners.VerificationStartedNotifier;
+import org.mockito.internal.progress.MockingProgress;
+import org.mockito.internal.stubbing.DefaultLenientStubber;
+import org.mockito.internal.stubbing.InvocationContainerImpl;
+import org.mockito.internal.stubbing.OngoingStubbingImpl;
+import org.mockito.internal.stubbing.StubberImpl;
+import org.mockito.internal.util.DefaultMockingDetails;
+import org.mockito.internal.verification.MockAwareVerificationMode;
+import org.mockito.internal.verification.VerificationDataImpl;
+import org.mockito.internal.verification.VerificationModeFactory;
+import org.mockito.internal.verification.api.InOrderContext;
+import org.mockito.internal.verification.api.VerificationDataInOrder;
+import org.mockito.internal.verification.api.VerificationDataInOrderImpl;
+import org.mockito.invocation.Invocation;
+import org.mockito.invocation.MockHandler;
+import org.mockito.mock.MockCreationSettings;
+import org.mockito.quality.Strictness;
+import org.mockito.stubbing.LenientStubber;
+import org.mockito.stubbing.OngoingStubbing;
+import org.mockito.stubbing.Stubber;
+import org.mockito.verification.VerificationMode;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.mockito.internal.exceptions.Reporter.*;
+import static org.mockito.internal.progress.ThreadSafeMockingProgress.mockingProgress;
+import static org.mockito.internal.util.MockUtil.createMock;
+import static org.mockito.internal.util.MockUtil.getInvocationContainer;
+import static org.mockito.internal.util.MockUtil.getMockHandler;
+import static org.mockito.internal.util.MockUtil.isMock;
+import static org.mockito.internal.util.MockUtil.resetMock;
+import static org.mockito.internal.util.MockUtil.typeMockabilityOf;
+import static org.mockito.internal.verification.VerificationModeFactory.noMoreInteractions;
+
+
+@SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L50">public class MockitoCore {</span>
+
+    public boolean isTypeMockable(Class&lt;?&gt; typeToMock) {
+<span class="fc" id="L53">        return typeMockabilityOf(typeToMock).mockable();</span>
+    }
+
+    public &lt;T&gt; T mock(Class&lt;T&gt; typeToMock, MockSettings settings) {
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        if (!MockSettingsImpl.class.isInstance(settings)) {</span>
+<span class="nc" id="L58">            throw new IllegalArgumentException(&quot;Unexpected implementation of '&quot; + settings.getClass().getCanonicalName() + &quot;'\n&quot; + &quot;At the moment, you cannot provide your own implementations of that class.&quot;);</span>
+        }
+<span class="fc" id="L60">        MockSettingsImpl impl = MockSettingsImpl.class.cast(settings);</span>
+<span class="fc" id="L61">        MockCreationSettings&lt;T&gt; creationSettings = impl.build(typeToMock);</span>
+<span class="fc" id="L62">        T mock = createMock(creationSettings);</span>
+<span class="fc" id="L63">        mockingProgress().mockingStarted(mock, creationSettings);</span>
+<span class="fc" id="L64">        return mock;</span>
+    }
+
+    public &lt;T&gt; OngoingStubbing&lt;T&gt; when(T methodCall) {
+<span class="fc" id="L68">        MockingProgress mockingProgress = mockingProgress();</span>
+<span class="fc" id="L69">        mockingProgress.stubbingStarted();</span>
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L71">        OngoingStubbing&lt;T&gt; stubbing = (OngoingStubbing&lt;T&gt;) mockingProgress.pullOngoingStubbing();</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        if (stubbing == null) {</span>
+<span class="fc" id="L73">            mockingProgress.reset();</span>
+<span class="fc" id="L74">            throw missingMethodInvocation();</span>
+        }
+<span class="fc" id="L76">        return stubbing;</span>
+    }
+
+    public &lt;T&gt; T verify(T mock, VerificationMode mode) {
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        if (mock == null) {</span>
+<span class="fc" id="L81">            throw nullPassedToVerify();</span>
+        }
+<span class="fc" id="L83">        MockingDetails mockingDetails = mockingDetails(mock);</span>
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        if (!mockingDetails.isMock()) {</span>
+<span class="fc" id="L85">            throw notAMockPassedToVerify(mock.getClass());</span>
+        }
+<span class="fc" id="L87">        assertNotStubOnlyMock(mock);</span>
+<span class="fc" id="L88">        MockHandler handler = mockingDetails.getMockHandler();</span>
+<span class="fc" id="L89">        mock = (T) VerificationStartedNotifier.notifyVerificationStarted(</span>
+<span class="fc" id="L90">            handler.getMockSettings().getVerificationStartedListeners(), mockingDetails);</span>
+
+<span class="fc" id="L92">        MockingProgress mockingProgress = mockingProgress();</span>
+<span class="fc" id="L93">        VerificationMode actualMode = mockingProgress.maybeVerifyLazily(mode);</span>
+<span class="fc" id="L94">        mockingProgress.verificationStarted(new MockAwareVerificationMode(mock, actualMode, mockingProgress.verificationListeners()));</span>
+<span class="fc" id="L95">        return mock;</span>
+    }
+
+    public &lt;T&gt; void reset(T... mocks) {
+<span class="fc" id="L99">        MockingProgress mockingProgress = mockingProgress();</span>
+<span class="fc" id="L100">        mockingProgress.validateState();</span>
+<span class="fc" id="L101">        mockingProgress.reset();</span>
+<span class="fc" id="L102">        mockingProgress.resetOngoingStubbing();</span>
+
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        for (T m : mocks) {</span>
+<span class="fc" id="L105">            resetMock(m);</span>
+        }
+<span class="fc" id="L107">    }</span>
+
+    public &lt;T&gt; void clearInvocations(T... mocks) {
+<span class="fc" id="L110">        MockingProgress mockingProgress = mockingProgress();</span>
+<span class="fc" id="L111">        mockingProgress.validateState();</span>
+<span class="fc" id="L112">        mockingProgress.reset();</span>
+<span class="fc" id="L113">        mockingProgress.resetOngoingStubbing();</span>
+
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        for (T m : mocks) {</span>
+<span class="fc" id="L116">            getInvocationContainer(m).clearInvocations();</span>
+        }
+<span class="fc" id="L118">    }</span>
+
+    public void verifyNoMoreInteractions(Object... mocks) {
+<span class="fc" id="L121">        assertMocksNotEmpty(mocks);</span>
+<span class="fc" id="L122">        mockingProgress().validateState();</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        for (Object mock : mocks) {</span>
+            try {
+<span class="fc bfc" id="L125" title="All 2 branches covered.">                if (mock == null) {</span>
+<span class="fc" id="L126">                    throw nullPassedToVerifyNoMoreInteractions();</span>
+                }
+<span class="fc" id="L128">                InvocationContainerImpl invocations = getInvocationContainer(mock);</span>
+<span class="fc" id="L129">                assertNotStubOnlyMock(mock);</span>
+<span class="fc" id="L130">                VerificationDataImpl data = new VerificationDataImpl(invocations, null);</span>
+<span class="fc" id="L131">                noMoreInteractions().verify(data);</span>
+<span class="fc" id="L132">            } catch (NotAMockException e) {</span>
+<span class="fc" id="L133">                throw notAMockPassedToVerifyNoMoreInteractions();</span>
+<span class="fc" id="L134">            }</span>
+        }
+<span class="fc" id="L136">    }</span>
+
+    public void verifyNoMoreInteractionsInOrder(List&lt;Object&gt; mocks, InOrderContext inOrderContext) {
+<span class="fc" id="L139">        mockingProgress().validateState();</span>
+<span class="fc" id="L140">        VerificationDataInOrder data = new VerificationDataInOrderImpl(inOrderContext, VerifiableInvocationsFinder.find(mocks), null);</span>
+<span class="fc" id="L141">        VerificationModeFactory.noMoreInteractions().verifyInOrder(data);</span>
+<span class="fc" id="L142">    }</span>
+
+    private void assertMocksNotEmpty(Object[] mocks) {
+<span class="fc bfc" id="L145" title="All 4 branches covered.">        if (mocks == null || mocks.length == 0) {</span>
+<span class="fc" id="L146">            throw mocksHaveToBePassedToVerifyNoMoreInteractions();</span>
+        }
+<span class="fc" id="L148">    }</span>
+
+    private void assertNotStubOnlyMock(Object mock) {
+<span class="fc bfc" id="L151" title="All 2 branches covered.">        if (getMockHandler(mock).getMockSettings().isStubOnly()) {</span>
+<span class="fc" id="L152">            throw stubPassedToVerify(mock);</span>
+        }
+<span class="fc" id="L154">    }</span>
+
+    public InOrder inOrder(Object... mocks) {
+<span class="fc bfc" id="L157" title="All 4 branches covered.">        if (mocks == null || mocks.length == 0) {</span>
+<span class="fc" id="L158">            throw mocksHaveToBePassedWhenCreatingInOrder();</span>
+        }
+<span class="fc bfc" id="L160" title="All 2 branches covered.">        for (Object mock : mocks) {</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">            if (mock == null) {</span>
+<span class="fc" id="L162">                throw nullPassedWhenCreatingInOrder();</span>
+            }
+<span class="fc bfc" id="L164" title="All 2 branches covered.">            if (!isMock(mock)) {</span>
+<span class="fc" id="L165">                throw notAMockPassedWhenCreatingInOrder();</span>
+            }
+<span class="fc" id="L167">            assertNotStubOnlyMock(mock);</span>
+        }
+<span class="fc" id="L169">        return new InOrderImpl(Arrays.asList(mocks));</span>
+    }
+
+    public Stubber stubber() {
+<span class="fc" id="L173">        return stubber(null);</span>
+    }
+
+    public Stubber stubber(Strictness strictness) {
+<span class="fc" id="L177">        MockingProgress mockingProgress = mockingProgress();</span>
+<span class="fc" id="L178">        mockingProgress.stubbingStarted();</span>
+<span class="fc" id="L179">        mockingProgress.resetOngoingStubbing();</span>
+<span class="fc" id="L180">        return new StubberImpl(strictness);</span>
+    }
+
+    public void validateMockitoUsage() {
+<span class="fc" id="L184">        mockingProgress().validateState();</span>
+<span class="fc" id="L185">    }</span>
+
+    /**
+     * For testing purposes only. Is not the part of main API.
+     *
+     * @return last invocation
+     */
+    public Invocation getLastInvocation() {
+<span class="fc" id="L193">        OngoingStubbingImpl ongoingStubbing = ((OngoingStubbingImpl) mockingProgress().pullOngoingStubbing());</span>
+<span class="fc" id="L194">        List&lt;Invocation&gt; allInvocations = ongoingStubbing.getRegisteredInvocations();</span>
+<span class="fc" id="L195">        return allInvocations.get(allInvocations.size() - 1);</span>
+    }
+
+    public Object[] ignoreStubs(Object... mocks) {
+<span class="fc bfc" id="L199" title="All 2 branches covered.">        for (Object m : mocks) {</span>
+<span class="fc" id="L200">            InvocationContainerImpl container = getInvocationContainer(m);</span>
+<span class="fc" id="L201">            List&lt;Invocation&gt; ins = container.getInvocations();</span>
+<span class="fc bfc" id="L202" title="All 2 branches covered.">            for (Invocation in : ins) {</span>
+<span class="fc bfc" id="L203" title="All 2 branches covered.">                if (in.stubInfo() != null) {</span>
+<span class="fc" id="L204">                    in.ignoreForVerification();</span>
+                }
+<span class="fc" id="L206">            }</span>
+        }
+<span class="fc" id="L208">        return mocks;</span>
+    }
+
+    public MockingDetails mockingDetails(Object toInspect) {
+<span class="fc" id="L212">        return new DefaultMockingDetails(toInspect);</span>
+    }
+
+    public LenientStubber lenient() {
+<span class="fc" id="L216">        return new DefaultLenientStubber();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

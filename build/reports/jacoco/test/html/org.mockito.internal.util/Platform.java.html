@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Platform.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.util</a> &gt; <span class="el_source">Platform.java</span></div><h1>Platform.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.util;
+
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.mockito.internal.util.StringUtil.join;
+
+public abstract class Platform {
+
+<span class="fc" id="L15">    private static final Pattern JAVA_8_RELEASE_VERSION_SCHEME = Pattern.compile(&quot;1\\.8\\.0_(\\d+)(?:-ea)?(?:-b\\d+)?&quot;);</span>
+<span class="fc" id="L16">    private static final Pattern JAVA_8_DEV_VERSION_SCHEME = Pattern.compile(&quot;1\\.8\\.0b\\d+_u(\\d+)&quot;);</span>
+<span class="fc" id="L17">    public static final String JAVA_VERSION = System.getProperty(&quot;java.specification.version&quot;);</span>
+<span class="fc" id="L18">    public static final String JVM_VERSION = System.getProperty(&quot;java.runtime.version&quot;);</span>
+<span class="fc" id="L19">    public static final String JVM_VENDOR = System.getProperty(&quot;java.vm.vendor&quot;);</span>
+<span class="fc" id="L20">    public static final String JVM_VENDOR_VERSION = System.getProperty(&quot;java.vm.version&quot;);</span>
+<span class="fc" id="L21">    public static final String JVM_NAME = System.getProperty(&quot;java.vm.name&quot;);</span>
+<span class="fc" id="L22">    public static final String JVM_INFO = System.getProperty(&quot;java.vm.info&quot;);</span>
+<span class="fc" id="L23">    public static final String OS_NAME = System.getProperty(&quot;os.name&quot;);</span>
+<span class="fc" id="L24">    public static final String OS_VERSION = System.getProperty(&quot;os.version&quot;);</span>
+
+    private Platform() {
+    }
+
+    public static boolean isAndroid() {
+<span class="fc" id="L30">        return System.getProperty(&quot;java.vendor&quot;, &quot;&quot;).toLowerCase(Locale.US).contains(&quot;android&quot;);</span>
+    }
+
+    public static boolean isAndroidMockMakerRequired() {
+<span class="nc" id="L34">        return Boolean.getBoolean(&quot;org.mockito.mock.android&quot;);</span>
+    }
+
+    public static String describe() {
+<span class="fc" id="L38">        String description = String.format(&quot;Java               : %s\n&quot; +</span>
+                             &quot;JVM vendor name    : %s\n&quot; +
+                             &quot;JVM vendor version : %s\n&quot; +
+                             &quot;JVM name           : %s\n&quot; +
+                             &quot;JVM version        : %s\n&quot; +
+                             &quot;JVM info           : %s\n&quot; +
+                             &quot;OS name            : %s\n&quot; +
+                             &quot;OS version         : %s\n&quot;,
+                             JAVA_VERSION,
+                             JVM_VENDOR,
+                             JVM_VENDOR_VERSION,
+                             JVM_NAME,
+                             JVM_VERSION,
+                             JVM_INFO,
+                             OS_NAME,
+                             OS_VERSION);
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">        if (isAndroid()) {</span>
+<span class="nc" id="L55">            description = join(</span>
+                    &quot;IMPORTANT INFORMATION FOR ANDROID USERS:&quot;,
+                    &quot;&quot;,
+                    &quot;The regular Byte Buddy mock makers cannot generate code on an Android VM!&quot;,
+                    &quot;To resolve this, please use the 'mockito-android' dependency for your application:&quot;,
+                    &quot;http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22mockito-android%22%20g%3A%22org.mockito%22&quot;,
+                    &quot;&quot;,
+                    description
+            );
+        }
+<span class="fc" id="L65">        return description;</span>
+    }
+
+    public static boolean isJava8BelowUpdate45() {
+<span class="nc" id="L69">        return isJava8BelowUpdate45(JVM_VERSION);</span>
+    }
+
+    static boolean isJava8BelowUpdate45(String jvmVersion) {
+<span class="fc" id="L73">        Matcher matcher = JAVA_8_RELEASE_VERSION_SCHEME.matcher(jvmVersion);</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (matcher.matches()) {</span>
+<span class="fc" id="L75">            int update = Integer.parseInt(matcher.group(1));</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">            return update &lt; 45;</span>
+        }
+
+<span class="fc" id="L79">        matcher = JAVA_8_DEV_VERSION_SCHEME.matcher(jvmVersion);</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        if (matcher.matches()) {</span>
+<span class="fc" id="L81">            int update = Integer.parseInt(matcher.group(1));</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">            return update &lt; 45;</span>
+        }
+
+<span class="fc" id="L85">        matcher = Pattern.compile(&quot;1\\.8\\.0-b\\d+&quot;).matcher(jvmVersion);</span>
+<span class="fc" id="L86">        return matcher.matches();</span>
+
+    }
+
+    public static String warnForVM(String vmName1, String warnMessage1,
+                                   String vmName2, String warnMessage2) {
+<span class="nc" id="L92">        return warnForVM(JVM_NAME,</span>
+                         vmName1, warnMessage1,
+                         vmName2, warnMessage2);
+    }
+
+    static String warnForVM(String current,
+                            String vmName1, String warnMessage1,
+                            String vmName2, String warnMessage2) {
+<span class="fc bfc" id="L100" title="All 4 branches covered.">        if (vmName1 != null &amp;&amp; current.contains(vmName1)) {</span>
+<span class="fc" id="L101">            return warnMessage1;</span>
+        }
+<span class="pc bpc" id="L103" title="1 of 4 branches missed.">        if (vmName2 != null &amp;&amp; current.contains(vmName2)) {</span>
+<span class="fc" id="L104">            return warnMessage2;</span>
+        }
+<span class="fc" id="L106">        return &quot;&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

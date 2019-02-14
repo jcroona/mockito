@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MockUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.util</a> &gt; <span class="el_source">MockUtil.java</span></div><h1>MockUtil.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2007 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.util;
+
+import org.mockito.Mockito;
+import org.mockito.exceptions.misusing.NotAMockException;
+import org.mockito.internal.configuration.plugins.Plugins;
+import org.mockito.internal.creation.settings.CreationSettings;
+import org.mockito.internal.stubbing.InvocationContainerImpl;
+import org.mockito.internal.util.reflection.LenientCopyTool;
+import org.mockito.invocation.MockHandler;
+import org.mockito.mock.MockCreationSettings;
+import org.mockito.mock.MockName;
+import org.mockito.plugins.MockMaker;
+import org.mockito.plugins.MockMaker.TypeMockability;
+
+import static org.mockito.internal.handler.MockHandlerFactory.createMockHandler;
+
+@SuppressWarnings(&quot;unchecked&quot;)
+public class MockUtil {
+
+<span class="fc" id="L24">    private static final MockMaker mockMaker = Plugins.getMockMaker();</span>
+
+    private MockUtil() {}
+
+    public static TypeMockability typeMockabilityOf(Class&lt;?&gt; type) {
+<span class="fc" id="L29">      return mockMaker.isTypeMockable(type);</span>
+    }
+
+    public static &lt;T&gt; T createMock(MockCreationSettings&lt;T&gt; settings) {
+<span class="fc" id="L33">        MockHandler mockHandler =  createMockHandler(settings);</span>
+
+<span class="fc" id="L35">        T mock = mockMaker.createMock(settings, mockHandler);</span>
+
+<span class="fc" id="L37">        Object spiedInstance = settings.getSpiedInstance();</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (spiedInstance != null) {</span>
+<span class="fc" id="L39">            new LenientCopyTool().copyToMock(spiedInstance, mock);</span>
+        }
+
+<span class="fc" id="L42">        return mock;</span>
+    }
+
+    public static &lt;T&gt; void resetMock(T mock) {
+<span class="fc" id="L46">        MockHandler oldHandler = getMockHandler(mock);</span>
+<span class="fc" id="L47">        MockCreationSettings settings = oldHandler.getMockSettings();</span>
+<span class="fc" id="L48">        MockHandler newHandler = createMockHandler(settings);</span>
+
+<span class="fc" id="L50">        mockMaker.resetMock(mock, newHandler, settings);</span>
+<span class="fc" id="L51">    }</span>
+
+    public static &lt;T&gt; MockHandler&lt;T&gt; getMockHandler(T mock) {
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (mock == null) {</span>
+<span class="fc" id="L55">            throw new NotAMockException(&quot;Argument should be a mock, but is null!&quot;);</span>
+        }
+
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (isMock(mock)) {</span>
+<span class="fc" id="L59">            return mockMaker.getHandler(mock);</span>
+        } else {
+<span class="fc" id="L61">            throw new NotAMockException(&quot;Argument should be a mock, but is: &quot; + mock.getClass());</span>
+        }
+    }
+
+    public static InvocationContainerImpl getInvocationContainer(Object mock) {
+<span class="fc" id="L66">        return (InvocationContainerImpl) getMockHandler(mock).getInvocationContainer();</span>
+    }
+
+    public static boolean isSpy(Object mock) {
+<span class="fc bfc" id="L70" title="All 4 branches covered.">        return isMock(mock) &amp;&amp; getMockSettings(mock).getDefaultAnswer() == Mockito.CALLS_REAL_METHODS;</span>
+    }
+
+    public static boolean isMock(Object mock) {
+        // TODO SF (perf tweak) in our codebase we call mockMaker.getHandler() multiple times unnecessarily
+        // This is not ideal because getHandler() can be expensive (reflective calls inside mock maker)
+        // The frequent pattern in the codebase are separate calls to: 1) isMock(mock) then 2) getMockHandler(mock)
+        // We could replace it with using mockingDetails().isMock()
+        // Let's refactor the codebase and use new mockingDetails() in all relevant places.
+        // Potentially we could also move other methods to MockitoMock, some other candidates: getInvocationContainer, isSpy, etc.
+        // This also allows us to reuse our public API MockingDetails
+<span class="fc bfc" id="L81" title="All 4 branches covered.">        return mock != null &amp;&amp; mockMaker.getHandler(mock) != null;</span>
+    }
+
+    public static MockName getMockName(Object mock) {
+<span class="fc" id="L85">        return getMockHandler(mock).getMockSettings().getMockName();</span>
+    }
+
+    public static void maybeRedefineMockName(Object mock, String newName) {
+<span class="fc" id="L89">        MockName mockName = getMockName(mock);</span>
+        //TODO SF hacky...
+<span class="fc" id="L91">        MockCreationSettings mockSettings = getMockHandler(mock).getMockSettings();</span>
+<span class="pc bpc" id="L92" title="1 of 4 branches missed.">		if (mockName.isDefault() &amp;&amp; mockSettings instanceof CreationSettings) {</span>
+<span class="fc" id="L93">            ((CreationSettings) mockSettings).setMockName(new MockNameImpl(newName));</span>
+        }
+<span class="fc" id="L95">    }</span>
+
+    public static MockCreationSettings getMockSettings(Object mock) {
+<span class="fc" id="L98">        return getMockHandler(mock).getMockSettings();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

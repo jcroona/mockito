@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MatcherApplicationStrategy.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.invocation</a> &gt; <span class="el_source">MatcherApplicationStrategy.java</span></div><h1>MatcherApplicationStrategy.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.invocation;
+
+import static org.mockito.internal.invocation.MatcherApplicationStrategy.MatcherApplicationType.ERROR_UNSUPPORTED_NUMBER_OF_MATCHERS;
+import static org.mockito.internal.invocation.MatcherApplicationStrategy.MatcherApplicationType.MATCH_EACH_VARARGS_WITH_LAST_MATCHER;
+import static org.mockito.internal.invocation.MatcherApplicationStrategy.MatcherApplicationType.ONE_MATCHER_PER_ARGUMENT;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.mockito.ArgumentMatcher;
+import org.mockito.internal.hamcrest.HamcrestArgumentMatcher;
+import org.mockito.internal.matchers.CapturingMatcher;
+import org.mockito.internal.matchers.VarargMatcher;
+import org.mockito.invocation.Invocation;
+
+public class MatcherApplicationStrategy {
+
+    private final Invocation invocation;
+    private final List&lt;ArgumentMatcher&lt;?&gt;&gt; matchers;
+    private final MatcherApplicationType matchingType;
+
+
+
+<span class="fc" id="L28">    private MatcherApplicationStrategy(Invocation invocation, List&lt;ArgumentMatcher&lt;?&gt;&gt; matchers, MatcherApplicationType matchingType) {</span>
+<span class="fc" id="L29">        this.invocation = invocation;</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        if (matchingType == MATCH_EACH_VARARGS_WITH_LAST_MATCHER) {</span>
+<span class="fc" id="L31">            int times = varargLength(invocation);</span>
+<span class="fc" id="L32">            this.matchers = appendLastMatcherNTimes(matchers, times);</span>
+<span class="fc" id="L33">        } else {</span>
+<span class="fc" id="L34">            this.matchers = matchers;</span>
+        }
+
+<span class="fc" id="L37">        this.matchingType = matchingType;</span>
+<span class="fc" id="L38">    }</span>
+
+    /**
+     * Returns the {@link MatcherApplicationStrategy} that must be used to capture the
+     * arguments of the given &lt;b&gt;invocation&lt;/b&gt; using the given &lt;b&gt;matchers&lt;/b&gt;.
+     *
+     * @param invocation
+     *            that contain the arguments to capture
+     * @param matchers
+     *            that will be used to capture the arguments of the invocation,
+     *            the passed {@link List} is not required to contain a
+     *            {@link CapturingMatcher}
+     * @return never &lt;code&gt;null&lt;/code&gt;
+     */
+    public static MatcherApplicationStrategy getMatcherApplicationStrategyFor(Invocation invocation, List&lt;ArgumentMatcher&lt;?&gt;&gt; matchers) {
+
+<span class="fc" id="L54">        MatcherApplicationType type = getMatcherApplicationType(invocation, matchers);</span>
+<span class="fc" id="L55">        return new MatcherApplicationStrategy(invocation, matchers, type);</span>
+    }
+
+    /**
+     * Applies the given {@link ArgumentMatcherAction} to all arguments and
+     * corresponding matchers
+     *
+     * @param action
+     *            must not be &lt;code&gt;null&lt;/code&gt;
+     * @return
+     *         &lt;ul&gt;
+     *         &lt;li&gt;&lt;code&gt;true&lt;/code&gt; if the given &lt;b&gt;action&lt;/b&gt; returned
+     *         &lt;code&gt;true&lt;/code&gt; for all arguments and matchers passed to it.
+     *         &lt;li&gt;&lt;code&gt;false&lt;/code&gt; if the given &lt;b&gt;action&lt;/b&gt; returned
+     *         &lt;code&gt;false&lt;/code&gt; for one of the passed arguments and matchers
+     *         &lt;li&gt;&lt;code&gt;false&lt;/code&gt; if the given matchers don't fit to the given invocation
+     *         because too many or to few matchers are available.
+     *         &lt;/ul&gt;
+     */
+    public boolean forEachMatcherAndArgument(ArgumentMatcherAction action) {
+<span class="fc bfc" id="L75" title="All 2 branches covered.">        if (matchingType == ERROR_UNSUPPORTED_NUMBER_OF_MATCHERS)</span>
+<span class="fc" id="L76">            return false;</span>
+
+<span class="fc" id="L78">        Object[] arguments = invocation.getArguments();</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        for (int i = 0; i &lt; arguments.length; i++) {</span>
+<span class="fc" id="L80">            ArgumentMatcher&lt;?&gt; matcher = matchers.get(i);</span>
+<span class="fc" id="L81">            Object argument = arguments[i];</span>
+
+<span class="fc bfc" id="L83" title="All 2 branches covered.">            if (!action.apply(matcher, argument)) {</span>
+<span class="fc" id="L84">                return false;</span>
+            }
+        }
+<span class="fc" id="L87">        return true;</span>
+    }
+
+    private static MatcherApplicationType getMatcherApplicationType(Invocation invocation, List&lt;ArgumentMatcher&lt;?&gt;&gt; matchers) {
+<span class="fc" id="L91">        final int rawArguments = invocation.getRawArguments().length;</span>
+<span class="fc" id="L92">        final int expandedArguments = invocation.getArguments().length;</span>
+<span class="fc" id="L93">        final int matcherCount = matchers.size();</span>
+
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        if (expandedArguments == matcherCount) {</span>
+<span class="fc" id="L96">            return ONE_MATCHER_PER_ARGUMENT;</span>
+        }
+
+<span class="fc bfc" id="L99" title="All 4 branches covered.">        if (rawArguments == matcherCount &amp;&amp; isLastMatcherVarargMatcher(matchers)) {</span>
+<span class="fc" id="L100">            return MATCH_EACH_VARARGS_WITH_LAST_MATCHER;</span>
+        }
+
+<span class="fc" id="L103">        return ERROR_UNSUPPORTED_NUMBER_OF_MATCHERS;</span>
+    }
+
+    private static boolean isLastMatcherVarargMatcher(final List&lt;ArgumentMatcher&lt;?&gt;&gt; matchers) {
+<span class="fc" id="L107">        ArgumentMatcher&lt;?&gt; argumentMatcher = lastMatcher(matchers);</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        if (argumentMatcher instanceof HamcrestArgumentMatcher&lt;?&gt;) {</span>
+<span class="fc" id="L109">           return  ((HamcrestArgumentMatcher&lt;?&gt;) argumentMatcher).isVarargMatcher();</span>
+        }
+<span class="fc" id="L111">        return argumentMatcher instanceof VarargMatcher;</span>
+    }
+
+    private static List&lt;ArgumentMatcher&lt;?&gt;&gt; appendLastMatcherNTimes(List&lt;ArgumentMatcher&lt;?&gt;&gt; matchers, int timesToAppendLastMatcher) {
+<span class="fc" id="L115">        ArgumentMatcher&lt;?&gt; lastMatcher = lastMatcher(matchers);</span>
+
+<span class="fc" id="L117">        List&lt;ArgumentMatcher&lt;?&gt;&gt; expandedMatchers = new ArrayList&lt;ArgumentMatcher&lt;?&gt;&gt;(matchers);</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        for (int i = 0; i &lt; timesToAppendLastMatcher; i++) {</span>
+<span class="fc" id="L119">            expandedMatchers.add(lastMatcher);</span>
+        }
+<span class="fc" id="L121">        return expandedMatchers;</span>
+    }
+
+    private static int varargLength(Invocation invocation) {
+<span class="fc" id="L125">        int rawArgumentCount = invocation.getRawArguments().length;</span>
+<span class="fc" id="L126">        int expandedArgumentCount = invocation.getArguments().length;</span>
+<span class="fc" id="L127">        return expandedArgumentCount - rawArgumentCount;</span>
+    }
+
+    private static ArgumentMatcher&lt;?&gt; lastMatcher(List&lt;ArgumentMatcher&lt;?&gt;&gt; matchers) {
+<span class="fc" id="L131">        return matchers.get(matchers.size() - 1);</span>
+    }
+
+<span class="fc" id="L134">    enum MatcherApplicationType {</span>
+<span class="fc" id="L135">        ONE_MATCHER_PER_ARGUMENT, MATCH_EACH_VARARGS_WITH_LAST_MATCHER, ERROR_UNSUPPORTED_NUMBER_OF_MATCHERS;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

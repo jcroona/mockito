@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MockingProgressImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.progress</a> &gt; <span class="el_source">MockingProgressImpl.java</span></div><h1>MockingProgressImpl.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2007 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+
+package org.mockito.internal.progress;
+
+import org.mockito.internal.configuration.GlobalConfiguration;
+import org.mockito.internal.debugging.Localized;
+import org.mockito.internal.debugging.LocationImpl;
+import org.mockito.internal.exceptions.Reporter;
+import org.mockito.internal.listeners.AutoCleanableListener;
+import org.mockito.invocation.Location;
+import org.mockito.listeners.MockCreationListener;
+import org.mockito.listeners.MockitoListener;
+import org.mockito.listeners.VerificationListener;
+import org.mockito.mock.MockCreationSettings;
+import org.mockito.stubbing.OngoingStubbing;
+import org.mockito.verification.VerificationMode;
+import org.mockito.verification.VerificationStrategy;
+
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+
+import static org.mockito.internal.exceptions.Reporter.unfinishedStubbing;
+import static org.mockito.internal.exceptions.Reporter.unfinishedVerificationException;
+
+@SuppressWarnings(&quot;unchecked&quot;)
+public class MockingProgressImpl implements MockingProgress {
+
+<span class="fc" id="L33">    private final ArgumentMatcherStorage argumentMatcherStorage = new ArgumentMatcherStorageImpl();</span>
+
+    private OngoingStubbing&lt;?&gt; ongoingStubbing;
+    private Localized&lt;VerificationMode&gt; verificationMode;
+<span class="fc" id="L37">    private Location stubbingInProgress = null;</span>
+    private VerificationStrategy verificationStrategy;
+<span class="fc" id="L39">    private final Set&lt;MockitoListener&gt; listeners = new LinkedHashSet&lt;MockitoListener&gt;();</span>
+
+<span class="fc" id="L41">    public MockingProgressImpl() {</span>
+<span class="fc" id="L42">        this.verificationStrategy = getDefaultVerificationStrategy();</span>
+<span class="fc" id="L43">    }</span>
+
+    public static VerificationStrategy getDefaultVerificationStrategy() {
+<span class="fc" id="L46">        return new VerificationStrategy() {</span>
+            public VerificationMode maybeVerifyLazily(VerificationMode mode) {
+<span class="fc" id="L48">                return mode;</span>
+            }
+        };
+    }
+
+    public void reportOngoingStubbing(OngoingStubbing ongoingStubbing) {
+<span class="fc" id="L54">        this.ongoingStubbing = ongoingStubbing;</span>
+<span class="fc" id="L55">    }</span>
+
+    public OngoingStubbing&lt;?&gt; pullOngoingStubbing() {
+<span class="fc" id="L58">        OngoingStubbing&lt;?&gt; temp = ongoingStubbing;</span>
+<span class="fc" id="L59">        ongoingStubbing = null;</span>
+<span class="fc" id="L60">        return temp;</span>
+    }
+
+    @Override
+    public Set&lt;VerificationListener&gt; verificationListeners() {
+<span class="fc" id="L65">        final LinkedHashSet&lt;VerificationListener&gt; verificationListeners = new LinkedHashSet&lt;VerificationListener&gt;();</span>
+
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        for (MockitoListener listener : listeners) {</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">            if (listener instanceof VerificationListener) {</span>
+<span class="fc" id="L69">                verificationListeners.add((VerificationListener) listener);</span>
+            }
+<span class="fc" id="L71">        }</span>
+
+<span class="fc" id="L73">        return verificationListeners;</span>
+    }
+
+
+    public void verificationStarted(VerificationMode verify) {
+<span class="fc" id="L78">        validateState();</span>
+<span class="fc" id="L79">        resetOngoingStubbing();</span>
+<span class="fc" id="L80">        verificationMode = new Localized(verify);</span>
+<span class="fc" id="L81">    }</span>
+
+    /* (non-Javadoc)
+     * @see org.mockito.internal.progress.MockingProgress#resetOngoingStubbing()
+     */
+    public void resetOngoingStubbing() {
+<span class="fc" id="L87">        ongoingStubbing = null;</span>
+<span class="fc" id="L88">    }</span>
+
+    public VerificationMode pullVerificationMode() {
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        if (verificationMode == null) {</span>
+<span class="fc" id="L92">            return null;</span>
+        }
+
+<span class="fc" id="L95">        VerificationMode temp = verificationMode.getObject();</span>
+<span class="fc" id="L96">        verificationMode = null;</span>
+<span class="fc" id="L97">        return temp;</span>
+    }
+
+    public void stubbingStarted() {
+<span class="fc" id="L101">        validateState();</span>
+<span class="fc" id="L102">        stubbingInProgress = new LocationImpl();</span>
+<span class="fc" id="L103">    }</span>
+
+    public void validateState() {
+<span class="fc" id="L106">        validateMostStuff();</span>
+
+        //validate stubbing:
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        if (stubbingInProgress != null) {</span>
+<span class="fc" id="L110">            Location temp = stubbingInProgress;</span>
+<span class="fc" id="L111">            stubbingInProgress = null;</span>
+<span class="fc" id="L112">            throw unfinishedStubbing(temp);</span>
+        }
+<span class="fc" id="L114">    }</span>
+
+    private void validateMostStuff() {
+        //State is cool when GlobalConfiguration is already loaded
+        //this cannot really be tested functionally because I cannot dynamically mess up org.mockito.configuration.MockitoConfiguration class
+<span class="fc" id="L119">        GlobalConfiguration.validate();</span>
+
+<span class="fc bfc" id="L121" title="All 2 branches covered.">        if (verificationMode != null) {</span>
+<span class="fc" id="L122">            Location location = verificationMode.getLocation();</span>
+<span class="fc" id="L123">            verificationMode = null;</span>
+<span class="fc" id="L124">            throw unfinishedVerificationException(location);</span>
+        }
+
+<span class="fc" id="L127">        getArgumentMatcherStorage().validateState();</span>
+<span class="fc" id="L128">    }</span>
+
+    public void stubbingCompleted() {
+<span class="fc" id="L131">        stubbingInProgress = null;</span>
+<span class="fc" id="L132">    }</span>
+
+    public String toString() {
+<span class="nc" id="L135">        return  &quot;ongoingStubbing: &quot; + ongoingStubbing +</span>
+        &quot;, verificationMode: &quot; + verificationMode +
+        &quot;, stubbingInProgress: &quot; + stubbingInProgress;
+    }
+
+    public void reset() {
+<span class="fc" id="L141">        stubbingInProgress = null;</span>
+<span class="fc" id="L142">        verificationMode = null;</span>
+<span class="fc" id="L143">        getArgumentMatcherStorage().reset();</span>
+<span class="fc" id="L144">    }</span>
+
+    public ArgumentMatcherStorage getArgumentMatcherStorage() {
+<span class="fc" id="L147">        return argumentMatcherStorage;</span>
+    }
+
+    public void mockingStarted(Object mock, MockCreationSettings settings) {
+<span class="fc bfc" id="L151" title="All 2 branches covered.">        for (MockitoListener listener : listeners) {</span>
+<span class="fc bfc" id="L152" title="All 2 branches covered.">            if (listener instanceof MockCreationListener) {</span>
+<span class="fc" id="L153">                ((MockCreationListener) listener).onMockCreated(mock, settings);</span>
+            }
+<span class="fc" id="L155">        }</span>
+<span class="fc" id="L156">        validateMostStuff();</span>
+<span class="fc" id="L157">    }</span>
+
+    public void addListener(MockitoListener listener) {
+<span class="fc" id="L160">        addListener(listener, listeners);</span>
+<span class="fc" id="L161">    }</span>
+
+    static void addListener(MockitoListener listener, Set&lt;MockitoListener&gt; listeners) {
+<span class="fc" id="L164">        List&lt;MockitoListener&gt; delete = new LinkedList&lt;MockitoListener&gt;();</span>
+<span class="fc bfc" id="L165" title="All 2 branches covered.">        for (MockitoListener existing : listeners) {</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">            if (existing.getClass().equals(listener.getClass())) {</span>
+<span class="fc bfc" id="L167" title="All 4 branches covered.">                if (existing instanceof AutoCleanableListener &amp;&amp; ((AutoCleanableListener) existing).isListenerDirty()) {</span>
+                    //dirty listener means that there was an exception even before the test started
+                    //if we fail here with redundant mockito listener exception there will be multiple failures causing confusion
+                    //so we simply remove the existing listener and move on
+<span class="fc" id="L171">                    delete.add(existing);</span>
+                } else {
+<span class="nc" id="L173">                    Reporter.redundantMockitoListener(listener.getClass().getSimpleName());</span>
+                }
+            }
+<span class="fc" id="L176">        }</span>
+        //delete dirty listeners so they don't occupy state/memory and don't receive notifications
+<span class="fc bfc" id="L178" title="All 2 branches covered.">        for (MockitoListener toDelete : delete) {</span>
+<span class="fc" id="L179">            listeners.remove(toDelete);</span>
+<span class="fc" id="L180">        }</span>
+<span class="fc" id="L181">        listeners.add(listener);</span>
+<span class="fc" id="L182">    }</span>
+
+    public void removeListener(MockitoListener listener) {
+<span class="fc" id="L185">        this.listeners.remove(listener);</span>
+<span class="fc" id="L186">    }</span>
+
+    public void setVerificationStrategy(VerificationStrategy strategy) {
+<span class="fc" id="L189">        this.verificationStrategy = strategy;</span>
+<span class="fc" id="L190">    }</span>
+
+    public VerificationMode maybeVerifyLazily(VerificationMode mode) {
+<span class="fc" id="L193">        return this.verificationStrategy.maybeVerifyLazily(mode);</span>
+    }
+
+    public void clearListeners() {
+<span class="fc" id="L197">        listeners.clear();</span>
+<span class="fc" id="L198">    }</span>
+
+     /*
+
+     //TODO 545 thread safety of all mockito
+
+     use cases:
+        - single threaded execution throughout
+        - single threaded mock creation, stubbing &amp; verification, multi-threaded interaction with mock
+        - thread per test case
+
+     */
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

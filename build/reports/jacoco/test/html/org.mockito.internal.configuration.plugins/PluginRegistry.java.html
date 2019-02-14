@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PluginRegistry.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.configuration.plugins</a> &gt; <span class="el_source">PluginRegistry.java</span></div><h1>PluginRegistry.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.configuration.plugins;
+
+import org.mockito.internal.creation.instance.InstantiatorProviderAdapter;
+import org.mockito.plugins.AnnotationEngine;
+import org.mockito.plugins.InstantiatorProvider;
+import org.mockito.plugins.InstantiatorProvider2;
+import org.mockito.plugins.MockMaker;
+import org.mockito.plugins.MockitoLogger;
+import org.mockito.plugins.PluginSwitch;
+import org.mockito.plugins.StackTraceCleanerProvider;
+
+class PluginRegistry {
+
+<span class="fc" id="L18">    private final PluginSwitch pluginSwitch = new PluginLoader(new DefaultPluginSwitch())</span>
+<span class="fc" id="L19">            .loadPlugin(PluginSwitch.class);</span>
+
+<span class="fc" id="L21">    private final MockMaker mockMaker = new PluginLoader(pluginSwitch, DefaultMockitoPlugins.INLINE_ALIAS)</span>
+<span class="fc" id="L22">            .loadPlugin(MockMaker.class);</span>
+
+<span class="fc" id="L24">    private final StackTraceCleanerProvider stackTraceCleanerProvider = new PluginLoader(pluginSwitch)</span>
+<span class="fc" id="L25">            .loadPlugin(StackTraceCleanerProvider.class);</span>
+
+    private final InstantiatorProvider2 instantiatorProvider;
+
+<span class="fc" id="L29">    private final AnnotationEngine annotationEngine = new PluginLoader(pluginSwitch)</span>
+<span class="fc" id="L30">            .loadPlugin(AnnotationEngine.class);</span>
+
+<span class="fc" id="L32">    private final MockitoLogger mockitoLogger = new PluginLoader(pluginSwitch)</span>
+<span class="fc" id="L33">            .loadPlugin(MockitoLogger.class);</span>
+
+<span class="fc" id="L35">    PluginRegistry() {</span>
+<span class="fc" id="L36">        Object impl = new PluginLoader(pluginSwitch).loadPlugin(InstantiatorProvider2.class, InstantiatorProvider.class);</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        if (impl instanceof InstantiatorProvider) {</span>
+<span class="fc" id="L38">            instantiatorProvider = new InstantiatorProviderAdapter((InstantiatorProvider) impl);</span>
+        } else {
+<span class="fc" id="L40">            instantiatorProvider = (InstantiatorProvider2) impl;</span>
+        }
+<span class="fc" id="L42">    }</span>
+
+    /**
+     * The implementation of the stack trace cleaner
+     */
+    StackTraceCleanerProvider getStackTraceCleanerProvider() {
+        //TODO we should throw some sensible exception if this is null.
+<span class="fc" id="L49">        return stackTraceCleanerProvider;</span>
+    }
+
+    /**
+     * Returns the implementation of the mock maker available for the current runtime.
+     *
+     * &lt;p&gt;Returns {@link org.mockito.internal.creation.bytebuddy.ByteBuddyMockMaker} if no
+     * {@link org.mockito.plugins.MockMaker} extension exists or is visible in the current classpath.&lt;/p&gt;
+     */
+    MockMaker getMockMaker() {
+<span class="fc" id="L59">        return mockMaker;</span>
+    }
+
+    /**
+     * Returns the instantiator provider available for the current runtime.
+     *
+     * &lt;p&gt;Returns {@link org.mockito.internal.creation.instance.DefaultInstantiatorProvider} if no
+     * {@link org.mockito.plugins.InstantiatorProvider2} extension exists or is visible in the
+     * current classpath.&lt;/p&gt;
+     */
+    InstantiatorProvider2 getInstantiatorProvider() {
+<span class="fc" id="L70">        return instantiatorProvider;</span>
+    }
+
+    /**
+     * Returns the annotation engine available for the current runtime.
+     *
+     * &lt;p&gt;Returns {@link org.mockito.internal.configuration.InjectingAnnotationEngine} if no
+     * {@link org.mockito.plugins.AnnotationEngine} extension exists or is visible in the current classpath.&lt;/p&gt;
+     */
+    AnnotationEngine getAnnotationEngine() {
+<span class="fc" id="L80">        return annotationEngine;</span>
+    }
+
+    /**
+     * Returns the logger available for the current runtime.
+     *
+     * &lt;p&gt;Returns {@link org.mockito.internal.util.ConsoleMockitoLogger} if no
+     * {@link org.mockito.plugins.MockitoLogger} extension exists or is visible in the current classpath.&lt;/p&gt;
+     */
+    MockitoLogger getMockitoLogger() {
+<span class="fc" id="L90">        return mockitoLogger;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StrictRunner.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.runners</a> &gt; <span class="el_source">StrictRunner.java</span></div><h1>StrictRunner.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.runners;
+
+import org.junit.runner.Description;
+import org.junit.runner.manipulation.Filter;
+import org.junit.runner.manipulation.NoTestsRemainException;
+import org.junit.runner.notification.RunNotifier;
+import org.mockito.Mockito;
+import org.mockito.internal.junit.UnnecessaryStubbingsReporter;
+import org.mockito.internal.runners.util.FailureDetector;
+
+public class StrictRunner implements InternalRunner {
+
+    private final Class&lt;?&gt; testClass;
+    private final InternalRunner runner;
+    private boolean filterRequested;
+
+    /**
+     * @param runner - the runner to wrap around
+     * @param testClass - for reporting purposes
+     */
+<span class="fc" id="L25">    public StrictRunner(InternalRunner runner, Class&lt;?&gt; testClass) {</span>
+<span class="fc" id="L26">        this.runner = runner;</span>
+<span class="fc" id="L27">        this.testClass = testClass;</span>
+<span class="fc" id="L28">    }</span>
+
+    public void run(RunNotifier notifier) {
+        //TODO need to be able to opt in for full stack trace instead of just relying on the stack trace filter
+<span class="fc" id="L32">        UnnecessaryStubbingsReporter reporter = new UnnecessaryStubbingsReporter();</span>
+<span class="fc" id="L33">        FailureDetector listener = new FailureDetector();</span>
+
+<span class="fc" id="L35">        Mockito.framework().addListener(reporter);</span>
+        try {
+            // add listener that detects test failures
+<span class="fc" id="L38">            notifier.addListener(listener);</span>
+<span class="fc" id="L39">            runner.run(notifier);</span>
+        } finally {
+<span class="fc" id="L41">            Mockito.framework().removeListener(reporter);</span>
+        }
+
+<span class="pc bpc" id="L44" title="1 of 4 branches missed.">        if (!filterRequested &amp;&amp; listener.isSuccessful()) {</span>
+            //only report when:
+            //1. if all tests from given test have ran (filter requested is false)
+            //   Otherwise we would report unnecessary stubs even if the user runs just single test from the class
+            //2. tests are successful (we don't want to add an extra failure on top of any existing failure, to avoid confusion)
+<span class="fc" id="L49">            reporter.validateUnusedStubs(testClass, notifier);</span>
+        }
+<span class="fc" id="L51">    }</span>
+
+    public Description getDescription() {
+<span class="fc" id="L54">        return runner.getDescription();</span>
+    }
+
+    public void filter(Filter filter) throws NoTestsRemainException {
+<span class="fc" id="L58">        filterRequested = true;</span>
+<span class="fc" id="L59">        runner.filter(filter);</span>
+<span class="fc" id="L60">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

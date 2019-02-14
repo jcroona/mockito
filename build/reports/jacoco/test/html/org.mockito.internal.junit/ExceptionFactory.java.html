@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExceptionFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.junit</a> &gt; <span class="el_source">ExceptionFactory.java</span></div><h1>ExceptionFactory.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2007 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+package org.mockito.internal.junit;
+
+import junit.framework.ComparisonFailure;
+import org.mockito.exceptions.verification.ArgumentsAreDifferent;
+
+public class ExceptionFactory {
+
+<span class="fc" id="L12">    private final static boolean hasJUnit = canLoadJunitClass();</span>
+
+    private ExceptionFactory() {
+    }
+
+    /**
+     * If JUnit is used, an AssertionError is returned that extends from JUnit {@link ComparisonFailure} and hence provide a better IDE support as the comparison result is comparable
+     */
+    public static AssertionError createArgumentsAreDifferentException(String message, String wanted, String actual) {
+<span class="fc bfc" id="L21" title="All 2 branches covered.">        if (hasJUnit) {</span>
+<span class="fc" id="L22">            return createJUnitArgumentsAreDifferent(message, wanted, actual);</span>
+        }
+<span class="fc" id="L24">        return new ArgumentsAreDifferent(message);</span>
+    }
+
+    private static AssertionError createJUnitArgumentsAreDifferent(String message, String wanted, String actual) {
+<span class="fc" id="L28">        return JUnitArgsAreDifferent.create(message, wanted, actual);</span>
+    }
+
+    private static boolean canLoadJunitClass() {
+        try {
+<span class="fc" id="L33">            JUnitArgsAreDifferent.create(&quot;message&quot;, &quot;wanted&quot;, &quot;actual&quot;);</span>
+<span class="fc" id="L34">        } catch (Throwable onlyIfJUnitIsNotAvailable) {</span>
+<span class="fc" id="L35">            return false;</span>
+<span class="fc" id="L36">        }</span>
+<span class="fc" id="L37">        return true;</span>
+    }
+
+    /**
+     * Don't inline this class! It allows create the JUnit-ArgumentsAreDifferent exception without the need to use reflection.
+     * &lt;p&gt;
+     * If JUnit is not available a call to {@link #create(String, String, String)} will throw a {@link NoClassDefFoundError}.
+     * The {@link NoClassDefFoundError} will be thrown by the class loader cause the JUnit class {@link ComparisonFailure}
+     * can't be loaded which is a upper class of ArgumentsAreDifferent.
+     */
+    private static class JUnitArgsAreDifferent {
+        static AssertionError create(String message, String wanted, String actual) {
+<span class="fc" id="L49">            return new org.mockito.exceptions.verification.junit.ArgumentsAreDifferent(message, wanted, actual);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

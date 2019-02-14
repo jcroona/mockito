@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AllInvocationsFinder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mockito</a> &gt; <a href="index.source.html" class="el_package">org.mockito.internal.invocation.finder</a> &gt; <span class="el_source">AllInvocationsFinder.java</span></div><h1>AllInvocationsFinder.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2007 Mockito contributors
+ * This program is made available under the terms of the MIT License.
+ */
+
+package org.mockito.internal.invocation.finder;
+
+import org.mockito.internal.invocation.InvocationComparator;
+import org.mockito.stubbing.Stubbing;
+import org.mockito.internal.stubbing.StubbingComparator;
+import org.mockito.internal.util.DefaultMockingDetails;
+import org.mockito.invocation.Invocation;
+
+import java.util.*;
+
+public class AllInvocationsFinder {
+
+    private AllInvocationsFinder() {}
+
+    /**
+     * gets all invocations from mocks. Invocations are ordered earlier first.
+     *
+     * @param mocks mocks
+     * @return invocations
+     */
+    public static List&lt;Invocation&gt; find(Iterable&lt;?&gt; mocks) {
+<span class="fc" id="L27">        Set&lt;Invocation&gt; invocationsInOrder = new TreeSet&lt;Invocation&gt;(new InvocationComparator());</span>
+<span class="fc bfc" id="L28" title="All 2 branches covered.">        for (Object mock : mocks) {</span>
+<span class="fc" id="L29">            Collection&lt;Invocation&gt; fromSingleMock = new DefaultMockingDetails(mock).getInvocations();</span>
+<span class="fc" id="L30">            invocationsInOrder.addAll(fromSingleMock);</span>
+<span class="fc" id="L31">        }</span>
+
+<span class="fc" id="L33">        return new LinkedList&lt;Invocation&gt;(invocationsInOrder);</span>
+    }
+
+    /**
+     * Gets all stubbings from mocks. Invocations are ordered earlier first.
+     *
+     * @param mocks mocks
+     * @return stubbings
+     */
+    public static Set&lt;Stubbing&gt; findStubbings(Iterable&lt;?&gt; mocks) {
+<span class="fc" id="L43">        Set&lt;Stubbing&gt; stubbings = new TreeSet&lt;Stubbing&gt;(new StubbingComparator());</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        for (Object mock : mocks) {</span>
+<span class="fc" id="L45">            Collection&lt;? extends Stubbing&gt; fromSingleMock = new DefaultMockingDetails(mock).getStubbings();</span>
+<span class="fc" id="L46">            stubbings.addAll(fromSingleMock);</span>
+<span class="fc" id="L47">        }</span>
+
+<span class="fc" id="L49">        return stubbings;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>
