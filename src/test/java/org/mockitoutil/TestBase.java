@@ -6,6 +6,7 @@
 package org.mockitoutil;
 
 import org.assertj.core.api.Condition;
+import org.coveragetracking.Coverage;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -36,21 +37,7 @@ public class TestBase {
 
     @AfterClass
     public static void printmatchesCoverage() {
-        String fileName = "matches.txt";
-        try {
-            java.io.PrintWriter writer = new java.io.PrintWriter(fileName, "UTF-8");
-            int counter = 0;
-            for(int i = 0; i < ArrayEquals.coverage.length; i++) {
-                writer.println("index: " + i + ", visited: " + ArrayEquals.coverage[i]);
-                if(ArrayEquals.coverage[i]) {
-                    counter++;
-                }
-            }
-            writer.println("(" + counter + " / " + ArrayEquals.coverage.length + ") branches visited.");
-            writer.close();
-        } catch (Exception e) {
-            System.out.println("Failed writing to file: " + fileName);
-        }
+        Coverage cov = new Coverage();
 
     }
 
