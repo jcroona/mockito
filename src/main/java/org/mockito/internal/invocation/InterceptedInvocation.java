@@ -10,6 +10,7 @@ import org.mockito.internal.reporting.PrintSettings;
 import org.mockito.invocation.Invocation;
 import org.mockito.invocation.Location;
 import org.mockito.invocation.StubInfo;
+import org.coveragetracking.*;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -136,9 +137,11 @@ public class InterceptedInvocation implements Invocation, VerificationAwareInvoc
     @Override
     public boolean equals(Object o) {
         if (o == null || !o.getClass().equals(this.getClass())) {
+            Coverage.InterceptedEquals[0] = true;
             return false;
         }
         InterceptedInvocation other = (InterceptedInvocation) o;
+        Coverage.InterceptedEquals[1] = true;
         return this.mockRef.get().equals(other.mockRef.get())
                 && this.mockitoMethod.equals(other.mockitoMethod)
                 && this.equalArguments(other.arguments);

@@ -4,6 +4,7 @@ public class Coverage {
     public Coverage() {
         printmatchesCoverage();
         printprintValuesCoverage();
+        printInterceptedEqualsCoverage();
     }
 
     //static boolean array used for counting branch coverage.
@@ -47,6 +48,28 @@ public class Coverage {
         }
 
     }
+    public static boolean[] InterceptedEquals = new boolean[2];
+
+    public static void printInterceptedEqualsCoverage() {
+        String fileName = "InterceptedEquals.txt";
+        try {
+            java.io.PrintWriter writer = new java.io.PrintWriter(fileName, "UTF-8");
+            int counter = 0;
+            for(int i = 0; i < InterceptedEquals.length; i++) {
+                writer.println("index: " + i + ", visited: " + InterceptedEquals[i]);
+                if(InterceptedEquals[i]) {
+                    counter++;
+                }
+            }
+            writer.println("(" + counter + " / " + InterceptedEquals.length + ") branches visited.");
+            writer.close();
+        } catch (Exception e) {
+            System.out.println("Failed writing to file: " + fileName);
+        }
+
+    }
+
+
     //Add more static variables and print functions after this line
     //And add it to Coverage().
 
