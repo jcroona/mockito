@@ -7,6 +7,7 @@ package org.mockitoutil;
 
 import org.assertj.core.api.Condition;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.mockito.MockitoAnnotations;
 import org.mockito.StateMaster;
@@ -18,6 +19,7 @@ import org.mockito.internal.debugging.LocationImpl;
 import org.mockito.internal.invocation.InvocationBuilder;
 import org.mockito.internal.invocation.InvocationMatcher;
 import org.mockito.internal.invocation.SerializableMethod;
+import org.mockito.internal.matchers.ArrayEquals;
 import org.mockito.invocation.Invocation;
 
 import java.io.ByteArrayOutputStream;
@@ -31,6 +33,28 @@ import static org.mockito.Mockito.mock;
  * valid state for all tests.
  */
 public class TestBase {
+
+    @AfterClass
+    public static void printmatchesCoverage() {
+        String fileName = "matches.txt";
+        try {
+            java.io.PrintWriter writer = new java.io.PrintWriter(fileName, "UTF-8");
+            int counter = 0;
+            for(int i = 0; i < ArrayEquals.coverage.length; i++) {
+                writer.println("index: " + i + ", visited: " + ArrayEquals.coverage[i]);
+                if(ArrayEquals.coverage[i]) {
+                    counter++;
+                }
+            }
+            writer.println("(" + counter + " / " + ArrayEquals.coverage.length + ") branches visited.");
+            writer.close();
+        } catch (Exception e) {
+            System.out.println("Failed writing to file: " + fileName);
+        }
+
+    }
+
+    public static boolean[] equalsCoverage = new boolean[11];
 
     /**
      * Condition to be used with AssertJ
