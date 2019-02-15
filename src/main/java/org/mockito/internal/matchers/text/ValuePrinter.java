@@ -4,6 +4,8 @@
  */
 package org.mockito.internal.matchers.text;
 
+import org.coveragetracking.Coverage;
+
 import java.lang.reflect.Array;
 import java.util.Iterator;
 import java.util.Map;
@@ -99,22 +101,28 @@ public class ValuePrinter {
      */
     public static String printValues(String start, String separator, String end, Iterator<?> values) {
         if(start == null){
+            Coverage.ValuePrinter[0] = true;
             start = "(";
         }
         if (separator == null){
+            Coverage.ValuePrinter[1] = true;
             separator = ",";
         }
         if (end == null){
+            Coverage.ValuePrinter[2] = true;
             end = ")";
         }
 
         StringBuilder sb = new StringBuilder(start);
         while(values.hasNext()) {
             sb.append(print(values.next()));
+            Coverage.ValuePrinter[3] = true;
             if (values.hasNext()) {
+                Coverage.ValuePrinter[4] = true;
                 sb.append(separator);
             }
         }
+        Coverage.ValuePrinter[5] = true;
         return sb.append(end).toString();
     }
 
