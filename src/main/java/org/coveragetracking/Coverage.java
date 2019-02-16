@@ -120,7 +120,7 @@ public class Coverage {
     }
 
 
-    public static boolean[] InstanceField = new boolean[3];
+    public static boolean[] InstanceField = new boolean[4];
 
     public static void printInstanceField() {
         String fileName = "InstanceFieldCoverage.txt";

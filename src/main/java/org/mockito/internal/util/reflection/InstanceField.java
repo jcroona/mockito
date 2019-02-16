@@ -135,7 +135,7 @@ public class InstanceField {
             Coverage.InstanceField[2] = true;
             return false;
         }
-
+        Coverage.InstanceField[3] = true;
         InstanceField that = (InstanceField) o;
         return field.equals(that.field) && instance.equals(that.instance);
     }

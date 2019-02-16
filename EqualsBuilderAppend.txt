@@ -1,0 +1,6 @@
+index: 0, visited: false
+index: 1, visited: true
+index: 2, visited: true
+index: 3, visited: false
+index: 4, visited: true
+(3 / 5) branches visited.
