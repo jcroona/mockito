@@ -11,6 +11,8 @@ import static org.mockito.internal.util.reflection.FieldSetter.setField;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 
+import org.coveragetracking.*;
+
 /**
  * Represents an accessible instance field.
  *
@@ -103,6 +105,7 @@ public class InstanceField {
 
     private FieldReader reader() {
         if (fieldReader == null) {
+            Coverage.InstanceField[0] = true;
             fieldReader = new FieldReader(instance, field);
         }
         return fieldReader;
@@ -124,8 +127,14 @@ public class InstanceField {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o){
+            Coverage.InstanceField[1] = true;
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()){
+            Coverage.InstanceField[2] = true;
+            return false;
+        }
 
         InstanceField that = (InstanceField) o;
         return field.equals(that.field) && instance.equals(that.instance);

@@ -7,6 +7,7 @@ public class Coverage {
         printInterceptedEqualsCoverage();
         printSerializableMethodCoverage();
         printMockitoDebuggerImpl();
+        printInstanceField();
     }
 
     //static boolean array used for counting branch coverage.
@@ -110,6 +111,28 @@ public class Coverage {
                 }
             }
             writer.println("(" + counter + " / " + MockitoDebuggerImpl.length + ") branches visited.");
+            writer.close();
+        } catch (Exception e) {
+            System.out.println("Failed writing to file: " + fileName);
+        }
+
+    }
+
+
+    public static boolean[] InstanceField = new boolean[3];
+
+    public static void printInstanceField() {
+        String fileName = "InstanceFieldCoverage.txt";
+        try {
+            java.io.PrintWriter writer = new java.io.PrintWriter(fileName, "UTF-8");
+            int counter = 0;
+            for(int i = 0; i < InstanceField.length; i++) {
+                writer.println("index: " + i + ", visited: " + InstanceField[i]);
+                if(InstanceField[i]) {
+                    counter++;
+                }
+            }
+            writer.println("(" + counter + " / " + InstanceField.length + ") branches visited.");
             writer.close();
         } catch (Exception e) {
             System.out.println("Failed writing to file: " + fileName);
