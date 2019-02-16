@@ -4,6 +4,7 @@
  */
 package org.mockito.internal.debugging;
 
+import org.coveragetracking.Coverage;
 import org.mockito.MockitoDebugger;
 import org.mockito.internal.invocation.UnusedStubsFinder;
 import org.mockito.internal.invocation.finder.AllInvocationsFinder;
@@ -37,6 +38,7 @@ public class MockitoDebuggerImpl implements MockitoDebugger {
 
         invocations = unusedStubsFinder.find(asList(mocks));
         if (invocations.isEmpty()) {
+            Coverage.MockitoDebuggerImpl[0] = true;
             return print(out);
         }
         out += line("********************************");
@@ -47,6 +49,7 @@ public class MockitoDebuggerImpl implements MockitoDebugger {
             out += line(i.toString());
             out += line(" stubbed: " + i.getLocation());
         }
+        Coverage.MockitoDebuggerImpl[1] = true;
         return print(out);
     }
 

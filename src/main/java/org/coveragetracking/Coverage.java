@@ -6,6 +6,7 @@ public class Coverage {
         printprintValuesCoverage();
         printInterceptedEqualsCoverage();
         printSerializableMethodCoverage();
+        printMockitoDebuggerImpl();
     }
 
     //static boolean array used for counting branch coverage.
@@ -94,4 +95,26 @@ public class Coverage {
         }
 
     }
+
+    public static boolean[] MockitoDebuggerImpl = new boolean[2];
+
+    public static void printMockitoDebuggerImpl() {
+        String fileName = "MockitoDebuggerImpl.txt";
+        try {
+            java.io.PrintWriter writer = new java.io.PrintWriter(fileName, "UTF-8");
+            int counter = 0;
+            for(int i = 0; i < MockitoDebuggerImpl.length; i++) {
+                writer.println("index: " + i + ", visited: " + MockitoDebuggerImpl[i]);
+                if(MockitoDebuggerImpl[i]) {
+                    counter++;
+                }
+            }
+            writer.println("(" + counter + " / " + MockitoDebuggerImpl.length + ") branches visited.");
+            writer.close();
+        } catch (Exception e) {
+            System.out.println("Failed writing to file: " + fileName);
+        }
+
+    }
+
 }
