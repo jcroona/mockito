@@ -8,6 +8,7 @@ public class Coverage {
         printSerializableMethodCoverage();
         printMockitoDebuggerImpl();
         printInstanceField();
+        printEqualsBuilderAppendCoverage();
     }
 
     //static boolean array used for counting branch coverage.
@@ -133,6 +134,27 @@ public class Coverage {
                 }
             }
             writer.println("(" + counter + " / " + InstanceField.length + ") branches visited.");
+            writer.close();
+        } catch (Exception e) {
+            System.out.println("Failed writing to file: " + fileName);
+        }
+
+    }
+
+    public static boolean[] EqualsBuilderCoverage = new boolean[5];
+
+    public static void printEqualsBuilderAppendCoverage() {
+        String fileName = "EqualsBuilderAppend.txt";
+        try {
+            java.io.PrintWriter writer = new java.io.PrintWriter(fileName, "UTF-8");
+            int counter = 0;
+            for(int i = 0; i < EqualsBuilderCoverage.length; i++) {
+                writer.println("index: " + i + ", visited: " + EqualsBuilderCoverage[i]);
+                if(EqualsBuilderCoverage[i]) {
+                    counter++;
+                }
+            }
+            writer.println("(" + counter + " / " + EqualsBuilderCoverage.length + ") branches visited.");
             writer.close();
         } catch (Exception e) {
             System.out.println("Failed writing to file: " + fileName);
