@@ -11,6 +11,7 @@ import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import org.coveragetracking.*;
 
 public class SerializableMethod implements Serializable, MockitoMethod {
 
@@ -88,30 +89,51 @@ public class SerializableMethod implements Serializable, MockitoMethod {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj){
+            Coverage.SerializableMethodEquals[0] = true;
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
+            Coverage.SerializableMethodEquals[1] = true;
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
+            Coverage.SerializableMethodEquals[2] = true;
             return false;
+        }
         SerializableMethod other = (SerializableMethod) obj;
         if (declaringClass == null) {
-            if (other.declaringClass != null)
+            if (other.declaringClass != null) {
+                Coverage.SerializableMethodEquals[3] = true;
                 return false;
-        } else if (!declaringClass.equals(other.declaringClass))
+            }
+        } else if (!declaringClass.equals(other.declaringClass)) {
+            Coverage.SerializableMethodEquals[4] = true;
             return false;
+        }
         if (methodName == null) {
-            if (other.methodName != null)
+            if (other.methodName != null) {
+                Coverage.SerializableMethodEquals[5] = true;
                 return false;
-        } else if (!methodName.equals(other.methodName))
+            }
+        } else if (!methodName.equals(other.methodName)) {
+            Coverage.SerializableMethodEquals[6] = true;
             return false;
-        if (!Arrays.equals(parameterTypes, other.parameterTypes))
+        }
+        if (!Arrays.equals(parameterTypes, other.parameterTypes)) {
+            Coverage.SerializableMethodEquals[7] = true;
             return false;
+        }
         if (returnType == null) {
-            if (other.returnType != null)
+            if (other.returnType != null) {
+                Coverage.SerializableMethodEquals[8] = true;
                 return false;
-        } else if (!returnType.equals(other.returnType))
+            }
+        } else if (!returnType.equals(other.returnType)) {
+            Coverage.SerializableMethodEquals[9] = true;
             return false;
+        }
+        Coverage.SerializableMethodEquals[10] = true;
         return true;
     }
 }

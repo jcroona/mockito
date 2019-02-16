@@ -5,6 +5,7 @@ public class Coverage {
         printmatchesCoverage();
         printprintValuesCoverage();
         printInterceptedEqualsCoverage();
+        printSerializableMethodCoverage();
     }
 
     //static boolean array used for counting branch coverage.
@@ -73,5 +74,24 @@ public class Coverage {
     //Add more static variables and print functions after this line
     //And add it to Coverage().
 
+    public static boolean[] SerializableMethodEquals = new boolean[11];
 
+    public static void printSerializableMethodCoverage() {
+        String fileName = "SerializableMethodEquals.txt";
+        try {
+            java.io.PrintWriter writer = new java.io.PrintWriter(fileName, "UTF-8");
+            int counter = 0;
+            for(int i = 0; i < SerializableMethodEquals.length; i++) {
+                writer.println("index: " + i + ", visited: " + SerializableMethodEquals[i]);
+                if(SerializableMethodEquals[i]) {
+                    counter++;
+                }
+            }
+            writer.println("(" + counter + " / " + SerializableMethodEquals.length + ") branches visited.");
+            writer.close();
+        } catch (Exception e) {
+            System.out.println("Failed writing to file: " + fileName);
+        }
+
+    }
 }
