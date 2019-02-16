@@ -52,8 +52,9 @@ public class InterceptedInvocationTest extends TestBase {
         NO_OP,
         location == null ? new LocationImpl() : location,
         1);
+        InterceptedInvocation invcopy = inv;
         boolean eq = inv.equals(null);
-        assertEquals(inv.equals(inv), true);
+        assertEquals(inv.equals(invcopy), true);
         assertEquals(inv.equals(new Integer(1)), false);
     }
 }
