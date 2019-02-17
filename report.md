@@ -89,16 +89,21 @@ They are not very long, so it is mostly just high complexity.
 
 
 4. Are exceptions taken into account in the given measurements?
+Yes.
 5. Is the documentation clear w.r.t. all the possible outcomes?
+No, it very unclear.
 
 ## Coverage
 
 ### Tools
 
-Document your experience in using a "new"/different coverage tool.
+#### Document your experience in using a "new"/different coverage tool.
 
 How well was the tool documented? Was it possible/easy/difficult to
 integrate it with your build environment?
+
+We used Jacoco. It had pretty clear documentation, and
+was easy to integrate with gradle.
 
 ### DYI
 
