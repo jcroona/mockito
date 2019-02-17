@@ -10,7 +10,7 @@ import org.mockito.internal.util.Checks;
 
 import java.lang.reflect.*;
 import java.util.*;
-
+import org.coveragetracking.*;
 
 /**
  * This class can retrieve generic meta-data that the compiler stores on classes
@@ -578,9 +578,15 @@ public abstract class GenericMetadataSupport {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
+            if (this == o){
+                Coverage.boundedTypeCoverage[0] = true;
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()){
+                Coverage.boundedTypeCoverage[1] = true;
+                return false;
+            }
+            Coverage.boundedTypeCoverage[2] = true;
             return typeVariable.equals(((TypeVarBoundedType) o).typeVariable);
 
         }
