@@ -15,14 +15,33 @@ import org.mockito.internal.verification.InOrderContextImpl;
 import org.mockito.internal.verification.api.InOrderContext;
 import org.mockito.invocation.Invocation;
 
+import org.mockito.internal.verification.AtLeast;
+
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.internal.verification.checkers.AtLeastXNumberOfInvocationsChecker.checkAtLeastNumberOfInvocations;
 
 public class AtLeastXNumberOfInvocationsCheckerTest   {
 
+
     @Rule
     public ExpectedException exception = ExpectedException.none();
+
+    @Test
+    public void toStringTest() {
+        AtLeast test = new AtLeast(1);
+        assertEquals(test.toString(),"Wanted invocations count: at least " + 1);
+
+    }
+
+    @Test
+    public void descriptionTest() {
+        AtLeast test = new AtLeast(1);
+        assertNotNull(test.description("test string"));
+
+    }
 
     @Test
     public void shouldMarkActualInvocationsAsVerifiedInOrder() {
@@ -56,6 +75,7 @@ public class AtLeastXNumberOfInvocationsCheckerTest   {
 
     }
 
+
     @Test
     public void shouldMarkActualInvocationsAsVerified() {
         //given
@@ -83,4 +103,5 @@ public class AtLeastXNumberOfInvocationsCheckerTest   {
         //when
         checkAtLeastNumberOfInvocations(asList(invocation, invocationTwo), new InvocationMatcher(invocation), 2);
     }
+
 }
