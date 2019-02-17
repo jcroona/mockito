@@ -38,7 +38,7 @@ is not easily possible: ten complex functions)?
    * Are the results clear?
     Yes, the results for the complexity is quite clear.
 
-
+### This is the 10 most complex functions,ordered by cyclomatic complexity.The first number is nloc. The second number is CC.
     1. 52     25    525      1      56 ReturnsEmptyValues::returnValueFor@77-132@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsEmptyValues.java
 
     2. 85     21    722      1      95 SubclassBytecodeGenerator::mockClass@81-175@src/main/java/org/mockito/internal/creation/bytebuddy/SubclassBytecodeGenerator.java
@@ -60,7 +60,7 @@ is not easily possible: ten complex functions)?
     10. 12      8    130      1      12 ValuePrinter::printMap@77-88@src/main/java/org/mockito/internal/matchers/text/ValuePrinter.java
 
 2. Are the functions just complex, or also long?
-They are not very long, so it is mostly a high complexity.
+They are not very long, so it is mostly high complexity.
 3. What is the purpose of the functions?
 
 
