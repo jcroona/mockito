@@ -33,12 +33,37 @@ there is no need to write much here.)
 1. What are your results for the ten most complex functions? (If ranking
 is not easily possible: ten complex functions)?
    * Did all tools/methods get the same result?
+    Yes. Many complex functions contain many 
+    else if statements, which is pretty easy to calculate.
    * Are the results clear?
+    Yes, the results for the complexity is quite clear.
 
 
+    1. 52     25    525      1      56 ReturnsEmptyValues::returnValueFor@77-132@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsEmptyValues.java
+
+    2. 85     21    722      1      95 SubclassBytecodeGenerator::mockClass@81-175@src/main/java/org/mockito/internal/creation/bytebuddy/SubclassBytecodeGenerator.java
+
+    3. 25     21    370      1      25 ArrayEquals::matches@17-41@src/main/java/org/mockito/internal/matchers/ArrayEquals.java
+
+    4. 27     14    173      1      27 SerializableMethod::equals@90-116@src/main/java/org/mockito/internal/invocation/SerializableMethod.java
+
+    5. 47     14    267      1      51 ValuePrinter::print@25-75@src/main/java/org/mockito/internal/matchers/text/ValuePrinter.java
+
+    6. 70     13    609      4      70 ModuleHandler::ModuleSystemFound::adjustModuleGraph@137-206@src/main/java/org/mockito/internal/creation/bytebuddy/ModuleHandler.java
+
+    7. 26      9    157      2      27 ConstructorInstantiator::evaluateConstructor@159-185@src/main/java/org/mockito/internal/creation/instance/ConstructorInstantiator.java
+
+    8. 34      8    351      1      38 InvocationsPrinter::printInvocations@20-57@src/main/java/org/mockito/internal/debugging/InvocationsPrinter.java
+
+    9. 22      8    160      1      24 ReturnsSmartNulls::answer@49-72@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsSmartNulls.java
+
+    10. 12      8    130      1      12 ValuePrinter::printMap@77-88@src/main/java/org/mockito/internal/matchers/text/ValuePrinter.java
 
 2. Are the functions just complex, or also long?
+They are not very long, so it is mostly a high complexity.
 3. What is the purpose of the functions?
+
+
 4. Are exceptions taken into account in the given measurements?
 5. Is the documentation clear w.r.t. all the possible outcomes?
 
