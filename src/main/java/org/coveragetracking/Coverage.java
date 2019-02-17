@@ -9,6 +9,7 @@ public class Coverage {
         printMockitoDebuggerImpl();
         printInstanceField();
         printEqualsBuilderAppendCoverage();
+        printAtLeastCoverage();
     }
 
     //static boolean array used for counting branch coverage.
@@ -155,6 +156,27 @@ public class Coverage {
                 }
             }
             writer.println("(" + counter + " / " + EqualsBuilderCoverage.length + ") branches visited.");
+            writer.close();
+        } catch (Exception e) {
+            System.out.println("Failed writing to file: " + fileName);
+        }
+
+    }
+
+    public static boolean[] AtLeastCoverage = new boolean[8];
+
+    public static void printAtLeastCoverage() {
+        String fileName = "AtLeastCoverage.txt";
+        try {
+            java.io.PrintWriter writer = new java.io.PrintWriter(fileName, "UTF-8");
+            int counter = 0;
+            for(int i = 0; i < AtLeastCoverage.length; i++) {
+                writer.println("index: " + i + ", visited: " + AtLeastCoverage[i]);
+                if(AtLeastCoverage[i]) {
+                    counter++;
+                }
+            }
+            writer.println("(" + counter + " / " + AtLeastCoverage.length + ") branches visited.");
             writer.close();
         } catch (Exception e) {
             System.out.println("Failed writing to file: " + fileName);
