@@ -8,6 +8,7 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import org.coveragetracking.*;
 
 /**
  * Utilities for Iterables
@@ -35,8 +36,10 @@ public class Iterables {
     public static <T> T firstOf(Iterable<T> iterable) {
         Iterator<T> iterator = iterable.iterator();
         if (!iterator.hasNext()) {
+            Collections.iterablesFirstCoverage[0] = true;
             throw new IllegalArgumentException("Cannot provide 1st element from empty iterable: " + iterable);
         }
+        Collections.iterablesFirstCoverage[1] = true;
         return iterator.next();
     }
 }
