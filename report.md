@@ -17,12 +17,9 @@ java.
 
 ## Onboarding experience
 
-Did it build as documented?
-Yes, to build it was needed to run `./gradlew build`
-It did however fail to build, due to a failing 
-stylecheck. All tests worked correctly, when running
-`gradlew test`, however. There was therefore
-some things that could be improved.
+Did it build as documented?  
+Yes, to build it was needed to run `./gradlew build`. However, it did fail to build, due to a failing stylecheck. There was therefore
+some things that could be improved. All tests worked correctly, when running `gradlew test`. 
     
 (See the assignment for details; if everything works out of the box,
 there is no need to write much here.)
@@ -72,8 +69,9 @@ is not easily possible: ten complex functions)?
 
      5. 12   ValuePrinter::print@25-75@src/main/java/org/mockito/internal/matchers/text/ValuePrinter.java
 
-2. Are the functions just complex, or also long?
+2. Are the functions just complex, or also long?  
 They are not very long, so it is mostly just high complexity.
+
 3. What is the purpose of the functions?
     1. The purpose is to return a default value for many of the classes and types that can be mocked.
     2. The purpose is to 
@@ -91,7 +89,7 @@ They are not very long, so it is mostly just high complexity.
 4. Are exceptions taken into account in the given measurements?
 Yes.
 5. Is the documentation clear w.r.t. all the possible outcomes?
-No, it very unclear.
+No, the documnentation is very unclear.
 
 ## Coverage
 
