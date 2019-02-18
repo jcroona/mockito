@@ -74,7 +74,7 @@ They are not very long, so it is mostly just high complexity.
 
 3. What is the purpose of the functions?
     1. The purpose is to return a default value for many of the classes and types that can be mocked.
-    2. The purpose is to 
+    2. The purpose is to create a mocked class that is very close to the class that is being mocked.
     
     3. Checking if arrays of certain types are equal.
     4. Checking if the `this` object is equal to another object.
@@ -111,7 +111,7 @@ test setup), and the ten methods where branch coverage is measured.
 The patch is probably too long to be copied here, so please add
 the git command that is used to obtain the patch instead:
 
-git diff ...
+git diff release/2.x coverage_before
 
 What kinds of constructs does your tool support, and how accurate is
 its output?
