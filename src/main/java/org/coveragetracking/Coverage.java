@@ -11,6 +11,7 @@ public class Coverage {
         printEqualsBuilderAppendCoverage();
         printAtLeastCoverage();
         boundedTypeCoverage();
+        boundedTypeCoverage();
     }
 
     //static boolean array used for counting branch coverage.
@@ -199,6 +200,27 @@ public class Coverage {
                 }
             }
             writer.println("(" + counter + " / " + boundedTypeCoverage.length + ") branches visited.");
+            writer.close();
+        } catch (Exception e) {
+            System.out.println("Failed writing to file: " + fileName);
+        }
+
+    }
+    
+    public static boolean[] iterablesFirstCoverage = new boolean[2];
+    
+    public static void boundedTypeCoverage() {
+        String fileName = "iterablesFirstCoverage.txt";
+        try {
+            java.io.PrintWriter writer = new java.io.PrintWriter(fileName, "UTF-8");
+            int counter = 0;
+            for(int i = 0; i < iterablesFirstCoverage.length; i++) {
+                writer.println("index: " + i + ", visited: " + iterablesFirstCoverage[i]);
+                if(iterablesFirstCoverage[i]) {
+                    counter++;
+                }
+            }
+            writer.println("(" + counter + " / " + iterablesFirstCoverage.length + ") branches visited.");
             writer.close();
         } catch (Exception e) {
             System.out.println("Failed writing to file: " + fileName);
