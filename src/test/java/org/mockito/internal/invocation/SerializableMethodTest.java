@@ -70,6 +70,30 @@ public class SerializableMethodTest extends TestBase {
         assertFalse(new SerializableMethod(testBaseToStringMethod).equals(method));
     }
 
+    /**
+     * Test if objects are exactly the same.
+     */
+    @Test
+    public void objectsShouldBeEqual() throws Exception {
+        assertTrue(method.equals(method));
+    }
+
+    /**
+     * Test if argument objects is null.
+     */
+    @Test
+    public void objectIsNull() throws Exception {
+        assertFalse(method.equals(null));
+    }
+
+    /**
+     * Test if argument object have a different class.
+     */
+    @Test
+    public void differentClass() throws Exception {
+        assertFalse(method.equals(new Object()));
+    }
+    
     //TODO: add tests for generated equals() method
 
 }

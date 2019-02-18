@@ -11,7 +11,11 @@ import java.lang.reflect.Field;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.internal.util.reflection.Fields.syntheticField;
 
+import static org.junit.Assert.*;
+
 public class FieldsTest {
+
+
 
     @Test
     public void fields_should_return_all_declared_fields_in_hierarchy() throws Exception {
@@ -46,6 +50,7 @@ public class FieldsTest {
                 .containsOnly(new InstanceField(field("a", instance), instance),
                               new InstanceField(field("b", instance), instance)
                 );
+        assertFalse(new InstanceField(field("a", instance), instance).equals(null));
     }
 
     private Field field(String name, Object instance) throws NoSuchFieldException {

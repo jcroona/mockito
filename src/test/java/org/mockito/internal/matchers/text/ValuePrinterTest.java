@@ -5,14 +5,28 @@
 package org.mockito.internal.matchers.text;
 
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
+
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.internal.matchers.text.ValuePrinter.print;
+import static org.mockito.internal.matchers.text.ValuePrinter.printValues;
 
 public class ValuePrinterTest {
+
+    @Test
+    public void testNullParameters() {
+        List<Integer> s = Arrays.asList(new Integer[] {1, 2});
+
+        assertTrue("(1,2)".equals(printValues(null, ",", ")", s.iterator())));
+        assertTrue("(1,2)".equals(printValues("(", null, ")", s.iterator())));
+        assertTrue("(1,2)".equals(printValues("(", ",", null, s.iterator())));
+
+    }
 
     @Test
     public void prints_values() {
