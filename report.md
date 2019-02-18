@@ -130,27 +130,27 @@ git diff ...
 
 Plan for refactoring complex code:
 
-1. 52     25    525      1      56 ReturnsEmptyValues::returnValueFor@77-132@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsEmptyValues.java  
+    1. 52     25    525      1      56 ReturnsEmptyValues::returnValueFor@77-132@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsEmptyValues.java  
 
-Group up the last else if statements java.util.* to one and call a new method to check which one it is. And for example to the same with all diffrerent kinds of Sets.
+    Group up the last else if statements java.util.* to one and call a new method to check which one it is. And for example to the same with all diffrerent kinds of Sets.
 
-2. 85     21    722      1      95 SubclassBytecodeGenerator::mockClass@81-175@src/main/java/org/mockito/internal/creation/bytebuddy/SubclassBytecodeGenerator.java
+    2. 85     21    722      1      95 SubclassBytecodeGenerator::mockClass@81-175@src/main/java/org/mockito/internal/creation/bytebuddy/SubclassBytecodeGenerator.java
 
-Complex method and hard to reduce the complexity but one things you could do is put a while and if-else statement(line 112-133) that are inside an else statement inside an own function.
+    Complex method and hard to reduce the complexity but one things you could do is put a while and if-else statement(line 112-133) that are inside an else statement inside its own method.
 
-3. 25     21    370      1      25 ArrayEquals::matches@17-41@src/main/java/org/mockito/internal/matchers/ArrayEquals.java
+    3. 25     21    370      1      25 ArrayEquals::matches@17-41@src/main/java/org/mockito/internal/matchers/ArrayEquals.java
 
-All different if/else-if statements checks different datatypes and 
-it is hard to reduce the complexity. We don't think that you would benefit but you could divide it into to functions which handles some of the checks each.
+    All different if/else-if statements checks different datatypes and 
+    it is hard to reduce the complexity. We don't think that you would benefit but you could divide it into to methods which handles some of the checks each.
 
 
-4. 27     14    173      1      27 SerializableMethod::equals@90-116@src/main/java/org/mockito/internal/invocation/SerializableMethod.java
+    4. 27     14    173      1      27 SerializableMethod::equals@90-116@src/main/java/org/mockito/internal/invocation/SerializableMethod.java
 
-All comparisons (line 97) with the new obejct "other" could be handled by a new method. 
+    All comparisons (line 97) with the new obejct "other" could be handled by a new method. 
 
-5. 47     14    267      1      51 ValuePrinter::print@25-75@src/main/java/org/mockito/internal/matchers/text/ValuePrinter.java
+    5. 47     14    267      1      51 ValuePrinter::print@25-75@src/main/java/org/mockito/internal/matchers/text/ValuePrinter.java
 
-Same as for method 3, all checks are for different kinds of datatypes.
+    Same as for method 3, all checks are for different kinds of datatypes.
 
 ## Effort spent
 
@@ -174,6 +174,5 @@ For each team member, how much time was spent in
 
 ## Overall experience
 
-What are your main take-aways from this project? What did you learn?
-
-Is there something special you want to mention here?
+What are your main take-aways from this project? What did you learn?  
+We have learned much about how development works in large scale open-source projects, in particular about the complexity levels and how difficult it can be to get complete branch coverage in functions with high cyclomatic complexity. We have also learned much about refactoring complex functions into smaller, more manageable functions that are significantly easier to run tests on for complete branch coverage.
