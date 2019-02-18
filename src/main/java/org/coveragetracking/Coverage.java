@@ -11,7 +11,7 @@ public class Coverage {
         printEqualsBuilderAppendCoverage();
         printAtLeastCoverage();
         boundedTypeCoverage();
-        boundedTypeCoverage();
+        iterablesFirstCoverage();
     }
 
     //static boolean array used for counting branch coverage.
@@ -209,7 +209,7 @@ public class Coverage {
     
     public static boolean[] iterablesFirstCoverage = new boolean[2];
     
-    public static void boundedTypeCoverage() {
+    public static void iterablesFirstCoverage() {
         String fileName = "iterablesFirstCoverage.txt";
         try {
             java.io.PrintWriter writer = new java.io.PrintWriter(fileName, "UTF-8");
