@@ -118,13 +118,13 @@ its output?
 
 ### Evaluation
 
-Report of old coverage: [link]
+Report of old coverage: [https://people.kth.se/~jcroona/coverage/after/]
 
-Report of new coverage: [link]
+Report of new coverage: [https://people.kth.se/~jcroona/coverage/after/]
 
 Test cases added:
 
-git diff ...
+git diff release/2.x coverage_tests
 
 ## Refactoring
 
