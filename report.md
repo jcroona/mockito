@@ -118,9 +118,9 @@ its output?
 
 ### Evaluation
 
-Report of old coverage: [https://people.kth.se/~jcroona/coverage/after/]
+Report of old coverage: https://people.kth.se/~jcroona/coverage/before/
 
-Report of new coverage: [https://people.kth.se/~jcroona/coverage/after/]
+Report of new coverage: https://people.kth.se/~jcroona/coverage/after/
 
 Test cases added:
 
