@@ -1,8 +1,15 @@
 # Report for assignment 3
 
-This is a template for your report. You are free to modify it as needed.
-It is not required to use markdown for your report either, but the report
-has to be delivered in a standard, cross-platform format.
+## Branch information
+The report is stored in report.md on branch [report-assignment](https://github.com/jcroona/mockito/tree/report-assignment)
+
+The branch with the original jacoco coverage report is stored on branch [original_coverage](https://github.com/jcroona/mockito/tree/original_coverage) in folder 
+build/reports/jacoco/test/html
+
+The branch [coverage_before](https://github.com/jcroona/mockito/tree/coverage_before) has our ad-hoc coverage framework before more tests was added.
+
+The branch [coverage_after](https://github.com/jcroona/mockito/tree/coverage_after) has our ad-hoc coverage framework and the additional tests.
+
 
 ## Project
 
@@ -125,13 +132,13 @@ its output?
 
 ### Evaluation
 
-Report of old coverage: [link]
+Report of old coverage: https://people.kth.se/~jcroona/coverage/before/
 
-Report of new coverage: [link]
+Report of new coverage: https://people.kth.se/~jcroona/coverage/after/
 
 Test cases added:
 
-git diff ...
+git diff release/2.x coverage_tests
 
 ## Refactoring
 
