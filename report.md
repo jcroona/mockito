@@ -83,15 +83,22 @@ They are not very long, so it is mostly just high complexity.
 3. What is the purpose of the functions?
     1. ReturnsEmptyValues::returnValueFor(): The purpose is to return a default value for many of the classes and types that can be mocked.
     2. 
-    
-    3. ArrayEquals::matches(): Checking if arrays of certain types are equal.
-    4. SerializableMethod::equals(): Checking if the `this` object is equal to another object.
+    3. ArrayEquals::matches(): Checking if two arrays are equal by checking that the types of the two arrays are the same, and calling another function to
+    check that the arrays are equal. Each branch in the matches() function is reached depending on 
+    the types of the input array and the wanted array. If the two arrays are of the same type the function Arrays.equals() is called
+    to return the result of checking equality of the two arrays. If the type is unsupported or the types are different false is returned.
+    4. SerializableMethod::equals(): Checking if the `this` object is equal to another object. The first three branches cover the cases where the objects are equal, 
+    where the input object is null and where the two objects have different classes. The next branches cover the cases where the 
+    declaringClass of the two objects are different, followed by checking if the objects have a different methodName. Lastly 
+    the parameterTypes and returnType of the two objects is checked to see if they are different. The final branch is reached 
+    and returns true if none of the previous branches have caught an inequality between the two objects.
     5. ValuePrinter::print(): The purpose is to create a printable string reperesentation of an object.
     6. 
     7. ConstructorInstantiator::evaluateConstructor(): Check if a new found constructor is better than any of tge previously found cionstructors.
     8. InvocationsPrinter::printInvocations(): Prints the methods that have been used on this mock object.
     9. ReturnsSmartNulls::answer(): Returns an object that gives a more useful error message than NPE in the event that the result of a method is null.
     10. ValuePrinter::printMap(): Returns a string representation of a map in a human readable form to be printed.
+
 
 
 4. Are exceptions taken into account in the given measurements?
