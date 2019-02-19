@@ -162,25 +162,44 @@ public class ConstructorInstantiator implements Instantiator {
 
         Class<?>[] paramTypes = constructor.getParameterTypes();
         for (int i = 0; i < paramTypes.length; ++i) {
+        // branch 1
             Class<?> paramType = paramTypes[i];
             if (!paramType.isPrimitive()) {
+                //branch 2
                 for (Constructor<?> existingCtor : matchingConstructors) {
+                    //branch 3
                     Class<?> existingParamType = existingCtor.getParameterTypes()[i];
                     if (paramType != existingParamType) {
                         if (paramType.isAssignableFrom(existingParamType)) {
+                            //branch 4
                             existingHasBetterParam = true;
                         } else {
+                            //branch 5
                             newHasBetterParam = true;
                         }
                     }
                 }
+            //branch 6
             }
         }
+        //branch 7
         if (!existingHasBetterParam) {
+            //branch 8
             matchingConstructors.clear();
         }
         if (newHasBetterParam || !existingHasBetterParam) {
+            //branch 9
             matchingConstructors.add(constructor);
         }
     }
+/*
+This private method evaluates which constructor is best to use. The constructors from the input matchingConstructors will be compared
+with existing constructors to evaluate which one is best suited, depending on the number of arguments for instance.
+If the constructor from the input has no paramTypes, the algorithm will not execute the first for-loop. 
+It will reach branch 7 and the two final if-statements to reach branch 8 and branch 9. 
+Else if paramTypes is not empty, an if-statement will check that paramType is not primitive, and then reach branch 2 or 7. Branch 6 will be reached if it's primitive.
+If matchingConstructors is not empty, branch 3 will be reached, followed by branch 4 or branch 5
+More detailed explanation is well documented in javadocs.
+*/
+    
 }

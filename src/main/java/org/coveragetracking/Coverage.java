@@ -7,6 +7,11 @@ public class Coverage {
         printInterceptedEqualsCoverage();
         printSerializableMethodCoverage();
         printMockitoDebuggerImpl();
+        printInstanceField();
+        printEqualsBuilderAppendCoverage();
+        printAtLeastCoverage();
+        boundedTypeCoverage();
+        iterablesFirstCoverage();
     }
 
     //static boolean array used for counting branch coverage.
@@ -117,4 +122,109 @@ public class Coverage {
 
     }
 
+
+    public static boolean[] InstanceField = new boolean[4];
+
+    public static void printInstanceField() {
+        String fileName = "InstanceFieldCoverage.txt";
+        try {
+            java.io.PrintWriter writer = new java.io.PrintWriter(fileName, "UTF-8");
+            int counter = 0;
+            for(int i = 0; i < InstanceField.length; i++) {
+                writer.println("index: " + i + ", visited: " + InstanceField[i]);
+                if(InstanceField[i]) {
+                    counter++;
+                }
+            }
+            writer.println("(" + counter + " / " + InstanceField.length + ") branches visited.");
+            writer.close();
+        } catch (Exception e) {
+            System.out.println("Failed writing to file: " + fileName);
+        }
+
+    }
+
+    public static boolean[] EqualsBuilderCoverage = new boolean[5];
+
+    public static void printEqualsBuilderAppendCoverage() {
+        String fileName = "EqualsBuilderAppend.txt";
+        try {
+            java.io.PrintWriter writer = new java.io.PrintWriter(fileName, "UTF-8");
+            int counter = 0;
+            for(int i = 0; i < EqualsBuilderCoverage.length; i++) {
+                writer.println("index: " + i + ", visited: " + EqualsBuilderCoverage[i]);
+                if(EqualsBuilderCoverage[i]) {
+                    counter++;
+                }
+            }
+            writer.println("(" + counter + " / " + EqualsBuilderCoverage.length + ") branches visited.");
+            writer.close();
+        } catch (Exception e) {
+            System.out.println("Failed writing to file: " + fileName);
+        }
+
+    }
+
+    public static boolean[] AtLeastCoverage = new boolean[8];
+
+    public static void printAtLeastCoverage() {
+        String fileName = "AtLeastCoverage.txt";
+        try {
+            java.io.PrintWriter writer = new java.io.PrintWriter(fileName, "UTF-8");
+            int counter = 0;
+            for(int i = 0; i < AtLeastCoverage.length; i++) {
+                writer.println("index: " + i + ", visited: " + AtLeastCoverage[i]);
+                if(AtLeastCoverage[i]) {
+                    counter++;
+                }
+            }
+            writer.println("(" + counter + " / " + AtLeastCoverage.length + ") branches visited.");
+            writer.close();
+        } catch (Exception e) {
+            System.out.println("Failed writing to file: " + fileName);
+        }
+
+    }
+
+    public static boolean[] boundedTypeCoverage = new boolean[3];
+    
+    public static void boundedTypeCoverage() {
+        String fileName = "boundedTypeCoverage.txt";
+        try {
+            java.io.PrintWriter writer = new java.io.PrintWriter(fileName, "UTF-8");
+            int counter = 0;
+            for(int i = 0; i < boundedTypeCoverage.length; i++) {
+                writer.println("index: " + i + ", visited: " + boundedTypeCoverage[i]);
+                if(boundedTypeCoverage[i]) {
+                    counter++;
+                }
+            }
+            writer.println("(" + counter + " / " + boundedTypeCoverage.length + ") branches visited.");
+            writer.close();
+        } catch (Exception e) {
+            System.out.println("Failed writing to file: " + fileName);
+        }
+
+    }
+    
+    public static boolean[] iterablesFirstCoverage = new boolean[2];
+    
+    public static void iterablesFirstCoverage() {
+        String fileName = "iterablesFirstCoverage.txt";
+        try {
+            java.io.PrintWriter writer = new java.io.PrintWriter(fileName, "UTF-8");
+            int counter = 0;
+            for(int i = 0; i < iterablesFirstCoverage.length; i++) {
+                writer.println("index: " + i + ", visited: " + iterablesFirstCoverage[i]);
+                if(iterablesFirstCoverage[i]) {
+                    counter++;
+                }
+            }
+            writer.println("(" + counter + " / " + iterablesFirstCoverage.length + ") branches visited.");
+            writer.close();
+        } catch (Exception e) {
+            System.out.println("Failed writing to file: " + fileName);
+        }
+
+    }
 }

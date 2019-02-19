@@ -49,25 +49,48 @@ public class ReturnsSmartNulls implements Answer<Object>, Serializable {
     public Object answer(final InvocationOnMock invocation) throws Throwable {
         Object defaultReturnValue = delegate.answer(invocation);
         if (defaultReturnValue != null) {
+            // Branch 1: is reached in the case that the defaultReturnValue is not null, meaning that this method
+            // does not need to return a "smart" null, and can just return defaultReturnValue
             return defaultReturnValue;
         }
         Class<?> type = invocation.getMethod().getReturnType();
 
         final Type returnType = invocation.getMethod().getGenericReturnType();
         if (returnType instanceof TypeVariable) {
+            // Branch 2: is reached in case the InvocationOnMock parameter's formal return type
+            // is TypeVariable. type will be set to the expected Type, or null if the Type cannot
+            // be retrieved.
             type = findTypeFromGeneric(invocation, (TypeVariable) returnType);
             if (type != null) {
+                // Branch 3: is reached in case a type was found. defaultReturnValue is then updated
+                // to a non-null instance or null (using parent classes) depending if the type could be
+                // resolved or not.
                 defaultReturnValue = delegateChains(type);
             }
         }
         if (defaultReturnValue != null) {
+            // Branch 4: reached if a non-null instance was found for type when the InvocationOnMock
+            // parameter's formal return type was of TypeVariable.
             return defaultReturnValue;
         }
 
         if (type != null && !type.isPrimitive() && !Modifier.isFinal(type.getModifiers())) {
+            // Branch 5: is reached if:
+            //
+            // 1: a non-null instance was NOT found for type when the InvocationOnMock
+            // parameter's formal return type was of TypeVariable and the return type is not null.
+            // or
+            // 2: the InvocationOnMock parameter's formal return type was a non-null type that
+            // was not of TypeVariable.
+            // For both above cases, in order for this branch to be reached, the return type of
+            // the InvocationOnMock parameter cannot be primitive and the type modifiers set must
+            // contain the final modifier integer.
+            // A smartNullPointer is then returned.
             final Location location = new LocationImpl();
             return Mockito.mock(type, new ThrowsSmartNullPointer(invocation, location));
         }
+        // Branch 6: is reached if the method was unable to find a way to return a SmartNullPointer
+        // and null is returned.
         return null;
     }
 

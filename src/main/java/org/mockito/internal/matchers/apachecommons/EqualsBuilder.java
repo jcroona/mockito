@@ -14,6 +14,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.coveragetracking.Coverage;
+
 /**
  * <p>Assists in implementing {@link Object#equals(Object)} methods.</p>
  *
@@ -753,20 +755,25 @@ class EqualsBuilder {
      */
     public EqualsBuilder append(boolean[] lhs, boolean[] rhs) {
         if (!isEquals) {
+            Coverage.EqualsBuilderCoverage[0] = true;
             return this;
         }
         if (lhs == rhs) {
+            Coverage.EqualsBuilderCoverage[1] = true;
             return this;
         }
         if (lhs == null || rhs == null) {
+            Coverage.EqualsBuilderCoverage[2] = true;
             this.setEquals(false);
             return this;
         }
         if (lhs.length != rhs.length) {
+            Coverage.EqualsBuilderCoverage[3] = true;
             this.setEquals(false);
             return this;
         }
         for (int i = 0; i < lhs.length && isEquals; ++i) {
+            Coverage.EqualsBuilderCoverage[4] = true;
             append(lhs[i], rhs[i]);
         }
         return this;
