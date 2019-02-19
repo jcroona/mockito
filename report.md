@@ -48,34 +48,34 @@ is not easily possible: ten complex functions)?
 ### This is the 10 most complex functions,ordered by cyclomatic complexity. The first number is nloc. The second number is CC.
     1. 52     25    525      1      56 ReturnsEmptyValues::returnValueFor@77-132@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsEmptyValues.java
 
-    2. 85     21    722      1      95 SubclassBytecodeGenerator::mockClass@81-175@src/main/java/org/mockito/internal/creation/bytebuddy/SubclassBytecodeGenerator.java
+    2. 25     21    370      1      25 ArrayEquals::matches@17-41@src/main/java/org/mockito/internal/matchers/ArrayEquals.java
 
-    3. 25     21    370      1      25 ArrayEquals::matches@17-41@src/main/java/org/mockito/internal/matchers/ArrayEquals.java
+    3. 27     14    173      1      27 SerializableMethod::equals@90-116@src/main/java/org/mockito/internal/invocation/SerializableMethod.java
 
-    4. 27     14    173      1      27 SerializableMethod::equals@90-116@src/main/java/org/mockito/internal/invocation/SerializableMethod.java
+    4. 47     14    267      1      51 ValuePrinter::print@25-75@src/main/java/org/mockito/internal/matchers/text/ValuePrinter.java
 
-    5. 47     14    267      1      51 ValuePrinter::print@25-75@src/main/java/org/mockito/internal/matchers/text/ValuePrinter.java
+    5. 26      9    157      2      27 ConstructorInstantiator::evaluateConstructor@159-185@src/main/java/org/mockito/internal/creation/instance/ConstructorInstantiator.java
 
-    6. 70     13    609      4      70 ModuleHandler::ModuleSystemFound::adjustModuleGraph@137-206@src/main/java/org/mockito/internal/creation/bytebuddy/ModuleHandler.java
+    6. 34      8    351      1      38 InvocationsPrinter::printInvocations@20-57@src/main/java/org/mockito/internal/debugging/InvocationsPrinter.java
 
-    7. 26      9    157      2      27 ConstructorInstantiator::evaluateConstructor@159-185@src/main/java/org/mockito/internal/creation/instance/ConstructorInstantiator.java
+    7. 22      8    160      1      24 ReturnsSmartNulls::answer@49-72@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsSmartNulls.java
 
-    8. 34      8    351      1      38 InvocationsPrinter::printInvocations@20-57@src/main/java/org/mockito/internal/debugging/InvocationsPrinter.java
+    8. 12      8    130      1      12 ValuePrinter::printMap@77-88@src/main/java/org/mockito/internal/matchers/text/ValuePrinter.java
 
-    9. 22      8    160      1      24 ReturnsSmartNulls::answer@49-72@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsSmartNulls.java
-
-    10. 12      8    130      1      12 ValuePrinter::printMap@77-88@src/main/java/org/mockito/internal/matchers/text/ValuePrinter.java
+    9. 22      7    181      2      24 SpyAnnotationEngine::process@49-72@src/main/java/org/mockito/internal/configuration/SpyAnnotationEngine.java
+    10. 21      7    127      1      24 ReturnsSmartNulls::delegateChains@82-105@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsSmartNulls.java
 
 ### Hand calculated CC for the top 5 functions
     1. 25 ReturnsEmptyValues::returnValueFor@77-132@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsEmptyValues.java
    
-    2. 21 SubclassBytecodeGenerator::mockClass@81-175@src/main/java/org/mockito/internal/creation/bytebuddy/SubclassBytecodeGenerator.java
 
-    3. 20 ArrayEquals::matches@17-41@src/main/java/org/mockito/internal/matchers/ArrayEquals.java
+    2. 20 ArrayEquals::matches@17-41@src/main/java/org/mockito/internal/matchers/ArrayEquals.java
 
-    4. 13 SerializableMethod::equals@90-116@src/main/java/org/mockito/internal/invocation/SerializableMethod.java
+    3. 13 SerializableMethod::equals@90-116@src/main/java/org/mockito/internal/invocation/SerializableMethod.java
 
-    5. 12 ValuePrinter::print@25-75@src/main/java/org/mockito/internal/matchers/text/ValuePrinter.java
+    4. 12 ValuePrinter::print@25-75@src/main/java/org/mockito/internal/matchers/text/ValuePrinter.java
+
+    5. 9 ConstructorInstantiator::evaluateConstructor@159-185@src/main/java/org/mockito/internal/creation/instance/ConstructorInstantiator.java
 
 2. Are the functions just complex, or also long?  
 They are not very long, so it is mostly just high complexity.
@@ -83,7 +83,6 @@ They are not very long, so it is mostly just high complexity.
 3. What is the purpose of the functions?
     1. ReturnsEmptyValues::returnValueFor(): The purpose is to return a default non-null value for the typethat is sent as a parameter. It is done through a large number of else if statements, and a branch is only reached if the type matches, at which point the function returns a default value for that type. If no type matches, null is returned.
     2. ReturnsSmartNulls::delegateChains() tries to resolve a non-null empty value for the given type, and tries to use any parent classes and interfaces available to do so. First it is checked if the type passed as a parameter has a non-null empty value, and then the interfaces that the class implements are checked. If none of them are viable, the parent is tried, and the process repeats as long as no non-null type is found or there is a parent class remaining. The branches in the code is described in detail in the [class itself.](https://github.com/jcroona/mockito/blob/coverage_before/src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsSmartNulls.java#L105-L128)
-
 
 
     3. ArrayEquals::matches(): Checking if two arrays are equal by checking that the types of the two arrays are the same, and calling another function to
