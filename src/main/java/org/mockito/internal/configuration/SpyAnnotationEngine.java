@@ -50,6 +50,8 @@ public class SpyAnnotationEngine implements AnnotationEngine, org.mockito.config
         Field[] fields = context.getDeclaredFields();
         for (Field field : fields) {
             if (field.isAnnotationPresent(Spy.class) && !field.isAnnotationPresent(InjectMocks.class)) {
+                // Reached if current field from the context are the spy annotation (@Spy) and
+                // if it does not have any InjectMocks annotations.
                 assertNoIncompatibleAnnotations(Spy.class, field, Mock.class, Captor.class);
                 field.setAccessible(true);
                 Object instance;
@@ -60,8 +62,12 @@ public class SpyAnnotationEngine implements AnnotationEngine, org.mockito.config
                         // for example happens when MockitoAnnotations.initMocks is called two times.
                         Mockito.reset(instance);
                     } else if (instance != null) {
+                        // Reached if the instance already exists and can be re-used.
+                        // No need to check if it is possible to create if it already exists.
                         field.set(testInstance, spyInstance(field, instance));
                     } else {
+                        // Reached if no instance exists and a new one needs to be created.
+                        // Needs to check if it have the requirements
                         field.set(testInstance, spyNewInstance(testInstance, field));
                     }
                 } catch (Exception e) {
