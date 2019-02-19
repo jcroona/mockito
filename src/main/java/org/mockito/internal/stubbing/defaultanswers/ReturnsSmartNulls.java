@@ -107,12 +107,20 @@ public class ReturnsSmartNulls implements Answer<Object>, Serializable {
         Object result = returnsEmptyValues.returnValueFor(type);
 
         if (result == null) {
+            // Branch1: is reached if the result from returnValueFor is null.
             Class<?> emptyValueForClass = type;
             while (emptyValueForClass != null && result == null) {
+                // Branch 2 is reached if emptyValueForClass is not null, and 
+                // no non-null default value has been found yet.
                 final Class<?>[] classes = emptyValueForClass.getInterfaces();
                 for (Class<?> clazz : classes) {
+                    //Branch 3: reached if there still exists a class in classes
+                    //and no break has occured, when a non-null result is found.
                     result = returnsEmptyValues.returnValueFor(clazz);
                     if (result != null) {
+                        // Branch 4: reached when a non-null return value has 
+                        // been found. breaks the for loop, and the while loop
+                        // will not run a new iteration
                         break;
                     }
                 }
@@ -121,6 +129,12 @@ public class ReturnsSmartNulls implements Answer<Object>, Serializable {
         }
 
         if (result == null) {
+            // Branch 5: reached if the result is still null, as no 
+            // non-null return value has been found yet.
+            // Uses ReturnsMoreEmptyValues().returnValueFor to check for 
+            // Strings or arrays.
+            // if this method does not find a non-null value the result 
+            // of this function will be null
             result = new ReturnsMoreEmptyValues().returnValueFor(type);
         }
 
