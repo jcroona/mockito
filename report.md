@@ -92,8 +92,11 @@ They are not very long, so it is mostly just high complexity.
     declaringClass of the two objects are different, followed by checking if the objects have a different methodName. Lastly 
     the parameterTypes and returnType of the two objects is checked to see if they are different. The final branch is reached 
     and returns true if none of the previous branches have caught an inequality between the two objects.
-    5. ValuePrinter::print(): The purpose is to create a printable string reperesentation of an object.
-    6. 
+    
+    5. ValuePrinter::print(): The purpose is to create a printable string reperesentation of an object. The returned string is meant to be readable by humans. Branches are reached depending on the type of the input object, i.e. 11 branches/checks for different types. If the input object is of another type than the tested ones it reaches the last branch witch calls descriptionOf(). The method will try to just return the value of the object otherwise it will cast an exception.
+
+    6. SpyAnnotationEngine::process(): The purpose of the function is to process fields that has the @Spy annotation.  The method is documented in detail w.r.t. the branches in the code in the [class itself.](https://github.com/jcroona/mockito/blob/coverage_before/src/main/java/org/mockito/internal/configuration/SpyAnnotationEngine.java)
+
     7. ConstructorInstantiator::evaluateConstructor(): Check if a new found constructor is better than any of tge previously found cionstructors.
     8. InvocationsPrinter::printInvocations(): Prints the methods that have been used on this mock object.
     9. ReturnsSmartNulls::answer(): Returns an object that gives a more useful error message than NPE in the event that the result of a method is null. The method is documented in detail w.r.t. the branches in the code in the [class itself.](https://github.com/jcroona/mockito/blob/801891127fc84dd74290f1e6ac989be13ff6267d/src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsSmartNulls.java)
