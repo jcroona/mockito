@@ -63,12 +63,12 @@ is not easily possible: ten complex functions)?
     8. 12      8    130      1      12 ValuePrinter::printMap@77-88@src/main/java/org/mockito/internal/matchers/text/ValuePrinter.java
 
     9. 22      7    181      2      24 SpyAnnotationEngine::process@49-72@src/main/java/org/mockito/internal/configuration/SpyAnnotationEngine.java
-    10. 21      7    127      1      24 ReturnsSmartNulls::delegateChains@82-105@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsSmartNulls.java
+    
+   10. 21      7    127      1      24 ReturnsSmartNulls::delegateChains@82-105@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsSmartNulls.java
 
 ### Hand calculated CC for the top 5 functions
     1. 25 ReturnsEmptyValues::returnValueFor@77-132@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsEmptyValues.java
    
-
     2. 20 ArrayEquals::matches@17-41@src/main/java/org/mockito/internal/matchers/ArrayEquals.java
 
     3. 13 SerializableMethod::equals@90-116@src/main/java/org/mockito/internal/invocation/SerializableMethod.java
