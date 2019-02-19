@@ -76,8 +76,15 @@ They are not very long, so it is mostly just high complexity.
     1. The purpose is to return a default value for many of the classes and types that can be mocked.
     2. The purpose is to create a mocked class that is very close to the class that is being mocked.
     
-    3. Checking if arrays of certain types are equal.
-    4. Checking if the `this` object is equal to another object.
+    3. Checking if two arrays are equal by checking that the types of the two arrays are the same, and calling another function to
+    check that the arrays are equal. Each branch in the matches() function is reached depending on 
+    the types of the input array and the wanted array. If the two arrays are of the same type the function Arrays.equals() is called
+    to return the result of checking equality of the two arrays. If the type is unsupported or the types are different false is returned.
+    4. Checking if the `this` object is equal to another object. The first three branches cover the cases where the objects are equal, 
+    where the input object is null and where the two objects have different classes. The next branches cover the cases where the 
+    declaringClass of the two objects are different, followed by checking if the objects have a different methodName. Lastly 
+    the parameterTypes and returnType of the two objects is checked to see if they are different. The final branch is reached 
+    and returns true if none of the previous branches have caught an inequality between the two objects.
     5. The purpose is to create a printable string reperesentation of an object.
     6. The goal of the function is to adjust the module graph for a certain class, if it is required.
     7. Check if a new found constructor is better than any of tge previously found cionstructors.
