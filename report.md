@@ -46,29 +46,29 @@ is not easily possible: ten complex functions)?
     Yes, the results for the complexity is quite clear.
 
 ### This is the 10 most complex functions,ordered by cyclomatic complexity. The first number is nloc. The second number is CC.
-    1. 52     25    525      1      56 ReturnsEmptyValues::returnValueFor@77-132@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsEmptyValues.java
+    1.  52     25    525      1      56 ReturnsEmptyValues::returnValueFor@77-132@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsEmptyValues.java
 
-    2. 25     21    370      1      25 ArrayEquals::matches@17-41@src/main/java/org/mockito/internal/matchers/ArrayEquals.java
+    2.  25     21    370      1      25 ArrayEquals::matches@17-41@src/main/java/org/mockito/internal/matchers/ArrayEquals.java
 
-    3. 27     14    173      1      27 SerializableMethod::equals@90-116@src/main/java/org/mockito/internal/invocation/SerializableMethod.java
+    3.  27     14    173      1      27 SerializableMethod::equals@90-116@src/main/java/org/mockito/internal/invocation/SerializableMethod.java
 
-    4. 47     14    267      1      51 ValuePrinter::print@25-75@src/main/java/org/mockito/internal/matchers/text/ValuePrinter.java
+    4.  47     14    267      1      51 ValuePrinter::print@25-75@src/main/java/org/mockito/internal/matchers/text/ValuePrinter.java
 
-    5. 26      9    157      2      27 ConstructorInstantiator::evaluateConstructor@159-185@src/main/java/org/mockito/internal/creation/instance/ConstructorInstantiator.java
+    5.  26      9    157      2      27 ConstructorInstantiator::evaluateConstructor@159-185@src/main/java/org/mockito/internal/creation/instance/ConstructorInstantiator.java
 
-    6. 34      8    351      1      38 InvocationsPrinter::printInvocations@20-57@src/main/java/org/mockito/internal/debugging/InvocationsPrinter.java
+    6.  34      8    351      1      38 InvocationsPrinter::printInvocations@20-57@src/main/java/org/mockito/internal/debugging/InvocationsPrinter.java
 
-    7. 22      8    160      1      24 ReturnsSmartNulls::answer@49-72@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsSmartNulls.java
+    7.  22      8    160      1      24 ReturnsSmartNulls::answer@49-72@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsSmartNulls.java
 
-    8. 12      8    130      1      12 ValuePrinter::printMap@77-88@src/main/java/org/mockito/internal/matchers/text/ValuePrinter.java
+    8.  12      8    130      1      12 ValuePrinter::printMap@77-88@src/main/java/org/mockito/internal/matchers/text/ValuePrinter.java
 
-    9. 22      7    181      2      24 SpyAnnotationEngine::process@49-72@src/main/java/org/mockito/internal/configuration/SpyAnnotationEngine.java
+    9.  22      7    181      2      24 SpyAnnotationEngine::process@49-72@src/main/java/org/mockito/internal/configuration/SpyAnnotationEngine.java
+    
     10. 21      7    127      1      24 ReturnsSmartNulls::delegateChains@82-105@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsSmartNulls.java
 
 ### Hand calculated CC for the top 5 functions
     1. 25 ReturnsEmptyValues::returnValueFor@77-132@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsEmptyValues.java
    
-
     2. 20 ArrayEquals::matches@17-41@src/main/java/org/mockito/internal/matchers/ArrayEquals.java
 
     3. 13 SerializableMethod::equals@90-116@src/main/java/org/mockito/internal/invocation/SerializableMethod.java
@@ -96,9 +96,12 @@ They are not very long, so it is mostly just high complexity.
     4. ValuePrinter::print(): The purpose is to create a printable string reperesentation of an object. The returned string is meant to be readable by humans. Branches are reached depending on the type of the input object, i.e. 11 branches/checks for different types. If the input object is of another type than the tested ones it reaches the last branch witch calls descriptionOf(). The method will try to just return the value of the object otherwise it will cast an exception.
 
 
-    5. ConstructorInstantiator::evaluateConstructor(): Check if a new found constructor is better than any of the previously found cionstructors. More detailed documentation of the method w.r.t the branches is in the code of the [class itself](https://github.com/jcroona/mockito/blob/07eb9e5644d026260cdf983a6fd6126fb4156b2c/src/main/java/org/mockito/internal/creation/instance/ConstructorInstantiator.java)
+    5. ConstructorInstantiator::evaluateConstructor(): Check if a new found constructor is better than any of the previously found constructors. More detailed documentation of the method w.r.t the branches is in the code of the [class itself.](https://github.com/jcroona/mockito/blob/07eb9e5644d026260cdf983a6fd6126fb4156b2c/src/main/java/org/mockito/internal/creation/instance/ConstructorInstantiator.java)
+
     6. InvocationsPrinter::printInvocations(): Prints the methods that have been used on this mock object.
+
     7. ReturnsSmartNulls::answer(): Returns an object that gives a more useful error message than NPE in the event that the result of a method is null. The method is documented in detail w.r.t. the branches in the code in the [class itself.](https://github.com/jcroona/mockito/blob/coverage_before/src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsSmartNulls.java)
+    
     8. ValuePrinter::printMap(): Returns a string representation of a map in a human readable form to be printed. The interesting branching of the code in this method is based on the iterator parameter. In case the iterator contains one element, the return string will consist of the start and end string parameters, as well as the element. In case the iterator contains more than one element, the string's items will also be separated by the separator string parameter. Additionally, the code will branch in case any of the first three parameters are null, in which case they will be set to standard strings.
 
     9. SpyAnnotationEngine::process(): The purpose of the function is to process fields that has the @Spy annotation.  The method is documented in detail w.r.t. the branches in the code in the [class itself.](https://github.com/jcroona/mockito/blob/coverage_before/src/main/java/org/mockito/internal/configuration/SpyAnnotationEngine.java)
