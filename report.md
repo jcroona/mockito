@@ -60,30 +60,31 @@ is not easily possible: ten complex functions)?
     10. 12      8    130      1      12 ValuePrinter::printMap@77-88@src/main/java/org/mockito/internal/matchers/text/ValuePrinter.java
 
 ### Hand calculated CC for the top 5 functions
-    1.    25   ReturnsEmptyValues::returnValueFor@77-132@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsEmptyValues.java
+    1. 25 ReturnsEmptyValues::returnValueFor@77-132@src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsEmptyValues.java
+   
     2. 21 SubclassBytecodeGenerator::mockClass@81-175@src/main/java/org/mockito/internal/creation/bytebuddy/SubclassBytecodeGenerator.java
 
     3. 20 ArrayEquals::matches@17-41@src/main/java/org/mockito/internal/matchers/ArrayEquals.java
 
-    4. 13     SerializableMethod::equals@90-116@src/main/java/org/mockito/internal/invocation/SerializableMethod.java
+    4. 13 SerializableMethod::equals@90-116@src/main/java/org/mockito/internal/invocation/SerializableMethod.java
 
-     5. 12   ValuePrinter::print@25-75@src/main/java/org/mockito/internal/matchers/text/ValuePrinter.java
+    5. 12 ValuePrinter::print@25-75@src/main/java/org/mockito/internal/matchers/text/ValuePrinter.java
 
 2. Are the functions just complex, or also long?  
 They are not very long, so it is mostly just high complexity.
 
 3. What is the purpose of the functions?
-    1. The purpose is to return a default value for many of the classes and types that can be mocked.
-    2. The purpose is to create a mocked class that is very close to the class that is being mocked.
+    1. ReturnsEmptyValues::returnValueFor(): The purpose is to return a default value for many of the classes and types that can be mocked.
+    2. 
     
-    3. Checking if arrays of certain types are equal.
-    4. Checking if the `this` object is equal to another object.
-    5. The purpose is to create a printable string reperesentation of an object.
-    6. The goal of the function is to adjust the module graph for a certain class, if it is required.
-    7. Check if a new found constructor is better than any of tge previously found cionstructors.
-    8. Prints the methods that have been used on this mock object.
-    9. Returns an object that gives a more useful error message than NPE in the event that the result of a method is null.
-    10. Returns a string representation of a map in a human readable form to be printed.
+    3. ArrayEquals::matches(): Checking if arrays of certain types are equal.
+    4. SerializableMethod::equals(): Checking if the `this` object is equal to another object.
+    5. ValuePrinter::print(): The purpose is to create a printable string reperesentation of an object.
+    6. 
+    7. ConstructorInstantiator::evaluateConstructor(): Check if a new found constructor is better than any of tge previously found cionstructors.
+    8. InvocationsPrinter::printInvocations(): Prints the methods that have been used on this mock object.
+    9. ReturnsSmartNulls::answer(): Returns an object that gives a more useful error message than NPE in the event that the result of a method is null.
+    10. ValuePrinter::printMap(): Returns a string representation of a map in a human readable form to be printed.
 
 
 4. Are exceptions taken into account in the given measurements?
