@@ -96,8 +96,8 @@ They are not very long, so it is mostly just high complexity.
     6. 
     7. ConstructorInstantiator::evaluateConstructor(): Check if a new found constructor is better than any of tge previously found cionstructors.
     8. InvocationsPrinter::printInvocations(): Prints the methods that have been used on this mock object.
-    9. ReturnsSmartNulls::answer(): Returns an object that gives a more useful error message than NPE in the event that the result of a method is null.
-    10. ValuePrinter::printMap(): Returns a string representation of a map in a human readable form to be printed.
+    9. ReturnsSmartNulls::answer(): Returns an object that gives a more useful error message than NPE in the event that the result of a method is null. The method is documented in detail w.r.t. the branches in the code in the [class itself.](https://github.com/jcroona/mockito/blob/801891127fc84dd74290f1e6ac989be13ff6267d/src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsSmartNulls.java)
+    10. ValuePrinter::printMap(): Returns a string representation of a map in a human readable form to be printed. The interesting branching of the code in this method is based on the iterator parameter. In case the iterator contains one element, the return string will consist of the start and end string parameters, as well as the element. In case the iterator contains more than one element, the string's items will also be separated by the separator string parameter. Additionally, the code will branch in case any of the first three parameters are null, in which case they will be set to standard strings.
 
 
 
