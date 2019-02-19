@@ -81,8 +81,11 @@ is not easily possible: ten complex functions)?
 They are not very long, so it is mostly just high complexity.
 
 3. What is the purpose of the functions?
-    1. ReturnsEmptyValues::returnValueFor(): The purpose is to return a default value for many of the classes and types that can be mocked.
-    2. 
+    1. ReturnsEmptyValues::returnValueFor(): The purpose is to return a default non-null value for the typethat is sent as a parameter. It is done through a large number of else if statements, and a branch is only reached if the type matches, at which point the function returns a default value for that type. If no type matches, null is returned.
+    2. ReturnsSmartNulls::delegateChains() tries to resolve a non-null empty value for the given type, and tries to use any parent classes and interfaces available to do so. First it is checked if the type passed as a parameter has a non-null empty value, and then the interfaces that the class implements are checked. If none of them are viable, the parent is tried, and the process repeats as long as no non-null type is found or there is a parent class remaining. The branches in the code is described in detail in the [class itself.](https://github.com/jcroona/mockito/blob/coverage_before/src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsSmartNulls.java#L105-L128)
+
+
+
     3. ArrayEquals::matches(): Checking if two arrays are equal by checking that the types of the two arrays are the same, and calling another function to
     check that the arrays are equal. Each branch in the matches() function is reached depending on 
     the types of the input array and the wanted array. If the two arrays are of the same type the function Arrays.equals() is called
