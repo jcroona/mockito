@@ -98,7 +98,8 @@ They are not very long, so it is mostly just high complexity.
 
     5. ConstructorInstantiator::evaluateConstructor(): Check if a new found constructor is better than any of the previously found constructors. More detailed documentation of the method w.r.t the branches is in the code of the [class itself.](https://github.com/jcroona/mockito/blob/07eb9e5644d026260cdf983a6fd6126fb4156b2c/src/main/java/org/mockito/internal/creation/instance/ConstructorInstantiator.java)
 
-    6. InvocationsPrinter::printInvocations(): Prints the methods that have been used on this mock object.
+    6. InvocationsPrinter::printInvocations(): Returns a string that is used for printing the methods that have been used on the mock object in the given input. The first branch in the code will return a message if no information is found.
+Two loops are being used for appending information to a stringbuilder which will be returned at the end. The code has four if-statements that will either return a string value or append to the stringbuilder. 
 
     7. ReturnsSmartNulls::answer(): Returns an object that gives a more useful error message than NPE in the event that the result of a method is null. The method is documented in detail w.r.t. the branches in the code in the [class itself.](https://github.com/jcroona/mockito/blob/coverage_before/src/main/java/org/mockito/internal/stubbing/defaultanswers/ReturnsSmartNulls.java)
     
